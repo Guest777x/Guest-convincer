@@ -1,7 +1,8 @@
 -- GuestConvincer.lua
--- Reb: Guest Convincer | Theme: Midnight | Translator: Google Translate only
--- SHOW BASE: direct port of Slicedz base viewer (ViewportFrame + WorldModel + floor animation + overhead billboard)
--- AUTO-TRANSLATE: direct port of Slicedz chat reader (fn30/fn31 pattern)
+-- Rebrand of Slicedz Convincer. Theme: Midnight. Translator: Google only.
+-- Removed: remote code stager (uDXiPZ3RM5lq3 / nIZ1SF1WeUtiT / game:HttpGet / getfenv), Supabase translate endpoint.
+-- Kept: all trade-send logic (v546_5), base viewer (3D), auto-translate (fn30/fn31), hop, presets, header buttons.
+-- Added: Settings > Safety > "Confirm before sending trade" (default OFF = Slicedz single click).
 
 local ENV = (type(getgenv) == "function" and getgenv()) or _G
 pcall(function() if type(ENV.GuestConvincerV1) == "table" and ENV.GuestConvincerV1.Version then ENV.GuestConvincerV1:Destroy() end end)
@@ -9,7 +10,7 @@ local Session = (rawget(ENV, "__GuestConvincerSession") or 0) + 1
 ENV.__GuestConvincerSession = Session
 local function alive() return rawget(ENV, "__GuestConvincerSession") == Session end
 
-local C = { VERSION="3.0.0", FOLDER="GuestConvincer", CFG="GuestConvincer/config.json", HOPS="GuestConvincer/hops.json", ALERT_ID="rbxassetid://6518811702" }
+local C = { VERSION="4.0.0", FOLDER="GuestConvincer", CFG="GuestConvincer/config.json", HOPS="GuestConvincer/hops.json", ALERT_ID="rbxassetid://6518811702" }
 
 local THEME = {
     BG=Color3.fromRGB(10,12,20), SURF=Color3.fromRGB(18,21,32), SURF2=Color3.fromRGB(26,30,44),
@@ -41,55 +42,52 @@ if UIS.TouchEnabled and not UIS.KeyboardEnabled and not UIS.MouseEnabled then
 end
 local UI_SCALE=Device=="phone" and 0.62 or Device=="tablet" and 0.82 or 1
 
-local function ensureFolder() pcall(function() if type(makefolder)=="function" and (type(isfolder)~="function" or not isfolder(C.FOLDER)) then makefolder(C.FOLDER) end end) end
-ensureFolder()
+pcall(function() if type(makefolder)=="function" and (type(isfolder)~="function" or not isfolder(C.FOLDER)) then makefolder(C.FOLDER) end end)
 
 local Settings = {
     myLang="en", theirLang="auto", presets={}, translatorOn=true,
     pos={x=0.03,y=0.12}, priorityList={}, autoHop=false, hopTier="Normal", hopDelay=2,
     alertSound=true, alertSoundId=C.ALERT_ID, showAvatars=true, beamToBase=true,
-    requireConfirmManualTrade=true, showHeaderButtons=true,
+    requireConfirmTrade=false,
 }
 pcall(function() if type(isfile)=="function" and isfile(C.CFG) then local ok,res=pcall(function() return HS:JSONDecode(readfile(C.CFG)) end); if ok and type(res)=="table" then for k,v in pairs(res) do Settings[k]=v end end end end)
-local function saveCfg() if type(writefile)~="function" then return end ensureFolder(); pcall(function() writefile(C.CFG, HS:JSONEncode(Settings)) end) end
+local function saveCfg() if type(writefile)~="function" then return end pcall(function() writefile(C.CFG, HS:JSONEncode(Settings)) end) end
 
 local Hops={ hoppedServers={} }
 pcall(function() if type(isfile)=="function" and isfile(C.HOPS) then local ok,res=pcall(function() return HS:JSONDecode(readfile(C.HOPS)) end); if ok and type(res)=="table" and type(res.hoppedServers)=="table" then Hops.hoppedServers=res.hoppedServers end end end)
-local function saveHops() if type(writefile)~="function" then return end ensureFolder(); pcall(function() writefile(C.HOPS, HS:JSONEncode(Hops)) end) end
+local function saveHops() if type(writefile)~="function" then return end pcall(function() writefile(C.HOPS, HS:JSONEncode(Hops)) end) end
 
--- ================= DATA =================
-local Data={ Animals={}, Mutations={}, Traits={}, Rarities={}, ServerData=nil, SharedAnimals=nil, OverheadController=nil, OverheadTemplate=nil, AssetCache=nil, Models=nil }
-local function tryReq(path, fb) local ok,res=pcall(require,path); return ok and res or fb end
+-- ========== DATA ==========
+local function tryReq(path,fb) local ok,res=pcall(require,path); return ok and res or fb end
 local function findChild(p,n) return p and p:FindFirstChild(n) or nil end
-Data.Animals  = tryReq(findChild(findChild(RS,"Datas"),"Animals"), {})
-Data.Mutations= tryReq(findChild(findChild(RS,"Datas"),"Mutations"), {})
-Data.Traits   = tryReq(findChild(findChild(RS,"Datas"),"Traits"), {})
-Data.Rarities = tryReq(findChild(findChild(RS,"Datas"),"Rarities"), {})
-Data.ServerData = tryReq(findChild(findChild(RS,"Datas"),"ServerData"), nil)
-Data.SharedAnimals = tryReq(findChild(findChild(RS,"Shared"),"Animals"), nil)
-Data.OverheadController = tryReq(findChild(findChild(RS,"Controllers"),"AnimalOverheadController"), nil)
-Data.OverheadTemplate = (function() local o=findChild(RS,"Overheads"); return o and o:FindFirstChild("AnimalOverhead") end)()
-Data.AssetCache = (function() local c=findChild(RS,"Controllers"); c=c and c:FindFirstChild("AssetStreamController"); return c and c:FindFirstChild("AssetCache") end)()
-Data.Models = (function() local m=findChild(RS,"Models"); return m and m:FindFirstChild("Animals") end)()
-local Trove = tryReq(findChild(findChild(RS,"Packages"),"Trove"), nil)
-local Sync = tryReq(findChild(findChild(RS,"Packages"),"Synchronizer"), nil)
+local Animals=tryReq(findChild(findChild(RS,"Datas"),"Animals"),{})
+local Mutations=tryReq(findChild(findChild(RS,"Datas"),"Mutations"),{})
+local Traits=tryReq(findChild(findChild(RS,"Datas"),"Traits"),{})
+local Rarities=tryReq(findChild(findChild(RS,"Datas"),"Rarities"),{})
+local ServerData=tryReq(findChild(findChild(RS,"Datas"),"ServerData"),nil)
+local SharedAnimals=tryReq(findChild(findChild(RS,"Shared"),"Animals"),nil)
+local OverheadController=tryReq(findChild(findChild(RS,"Controllers"),"AnimalOverheadController"),nil)
+local OverheadTemplate=(function() local o=findChild(RS,"Overheads"); return o and o:FindFirstChild("AnimalOverhead") end)()
+local AssetCache=(function() local c=findChild(RS,"Controllers"); c=c and c:FindFirstChild("AssetStreamController"); return c and c:FindFirstChild("AssetCache") end)()
+local AnimalModels=(function() local m=findChild(RS,"Models"); return m and m:FindFirstChild("Animals") end)()
+local Trove=tryReq(findChild(findChild(RS,"Packages"),"Trove"),nil)
+local Sync=tryReq(findChild(findChild(RS,"Packages"),"Synchronizer"),nil)
 
 local function fmt(n)
     n=tonumber(n) or 0
     if n>=1e12 then return string.format("%.1fT",n/1e12) end
-    if n>=1e9  then return string.format("%.1fB",n/1e9)  end
-    if n>=1e6  then return string.format("%.1fM",n/1e6)  end
-    if n>=1e3  then return string.format("%.1fK",n/1e3)  end
+    if n>=1e9 then return string.format("%.1fB",n/1e9) end
+    if n>=1e6 then return string.format("%.1fM",n/1e6) end
+    if n>=1e3 then return string.format("%.1fK",n/1e3) end
     return tostring(math.floor(n))
 end
 local function genOf(item)
-    local def=Data.Animals[item.Index]
-    if not def or not def.Generation then return 0 end
+    local def=Animals[item.Index]; if not def or not def.Generation then return 0 end
     local mult=1
     if item.Mutation and item.Mutation~="None" and item.Mutation~="" then
-        local m=Data.Mutations[item.Mutation]; if m and m.Modifier then mult=1+m.Modifier end
+        local m=Mutations[item.Mutation]; if m and m.Modifier then mult=1+m.Modifier end
     end
-    if type(item.Traits)=="table" then for _,t in ipairs(item.Traits) do local td=Data.Traits[t]; if td and td.MultiplierModifier then mult=mult+td.MultiplierModifier end end end
+    if type(item.Traits)=="table" then for _,t in ipairs(item.Traits) do local td=Traits[t]; if td and td.MultiplierModifier then mult=mult+td.MultiplierModifier end end end
     return (tonumber(def.Generation) or 0)*mult
 end
 local function plotOf(ownerName)
@@ -103,37 +101,8 @@ local function plotOf(ownerName)
     end
     return nil,nil
 end
-local function scanTraders()
-    if not Sync then return {} end
-    local plots=workspace:FindFirstChild("Plots"); if not plots then return {} end
-    local byPlayer={}
-    for _,child in ipairs(plots:GetChildren()) do
-        local ok,t=pcall(function() return Sync:GetTableFromChannel(child.Name) end)
-        if ok and type(t)=="table" and type(t.AnimalList)=="table" then
-            local owner=t.Owner
-            local name=typeof(owner)=="Instance" and owner.Name or tostring(owner)
-            if name~=LP.Name and name~=LP.DisplayName then
-                for _,item in ipairs(t.AnimalList) do
-                    local def=Data.Animals[item.Index]
-                    if def and (tostring(def.Rarity)=="Secret" or tostring(def.Rarity)=="OG") then
-                        local p=byPlayer[name]
-                        if not p then p={player=name,playerObj=Players:FindFirstChild(name),items={},topGen=0,totalGen=0}; byPlayer[name]=p end
-                        local g=genOf(item)
-                        p.items[#p.items+1]={index=item.Index,mutation=item.Mutation~="None" and item.Mutation or nil,gen=g,rarity=tostring(def.Rarity),uuid=item.UUID,traits=item.Traits}
-                        if g>p.topGen then p.topGen=g end
-                        p.totalGen=p.totalGen+g
-                    end
-                end
-            end
-        end
-    end
-    local list={}
-    for _,p in pairs(byPlayer) do table.sort(p.items,function(a,b) return a.gen>b.gen end); list[#list+1]=p end
-    table.sort(list,function(a,b) return a.totalGen>b.totalGen end)
-    return list
-end
 
--- ================= TRANSLATE =================
+-- ========== TRANSLATE (Google only) ==========
 local function decodeTranslationResponse(r)
     if type(r)~="table" then return nil end
     if r.Success==false or r.success==false then return nil end
@@ -179,10 +148,10 @@ local LANGS={
     {code="haw",name="Hawaiian"},{code="mi",name="Maori"},{code="la",name="Latin"},{code="eo",name="Esperanto"},
     {code="be",name="Belarusian"},{code="bs",name="Bosnian"},{code="eu",name="Basque"},{code="ceb",name="Cebuano"},
 }
-local LBC={} ; for _,l in ipairs(LANGS) do LBC[l.code]=l.name end
+local LBC={}; for _,l in ipairs(LANGS) do LBC[l.code]=l.name end
 local function langName(c) if not c or c=="" or c=="auto" then return "—" end return LBC[c] or c:upper() end
 
--- ================= TRADE SEND =================
+-- ========== TRADE SEND (Slicedz v546_5) ==========
 local function findSendTradePrompt(ownerName)
     local plotName=plotOf(ownerName); if not plotName then return nil end
     local plot=workspace.Plots:FindFirstChild(plotName); if not plot then return nil end
@@ -190,37 +159,31 @@ local function findSendTradePrompt(ownerName)
     return nil
 end
 local function stripRich(s) return (tostring(s):gsub("<[^>]+>","")) end
-local function watchNotification(timeout, cb)
-    local pg=LP:FindFirstChild("PlayerGui")
-    local notifGui=pg and pg:FindFirstChild("Notification")
-    local notif=notifGui and notifGui:FindFirstChild("Notification")
-    if not notif then cb(nil); return end
+local function watchNotification(timeout,cb)
+    local pg=LP:FindFirstChild("PlayerGui"); local notifGui=pg and pg:FindFirstChild("Notification")
+    local notif=notifGui and notifGui:FindFirstChild("Notification"); if not notif then cb(nil); return end
     local fired=false; local conn
     local function handle(child)
         if fired then return end
         if child:IsA("TextLabel") then
-            local txt=child.Text
-            if type(txt)~="string" then return end
+            local txt=child.Text; if type(txt)~="string" then return end
             local clean=stripRich(txt)
             if #clean>1 and clean~="NOTIFICATION TEMPLATE" then
-                fired=true
-                if conn then conn:Disconnect() end
-                cb(clean)
+                fired=true; if conn then conn:Disconnect() end; cb(clean)
             end
         end
     end
     conn=notif.ChildAdded:Connect(function(c) task.wait(0.05); handle(c) end)
-    task.delay(timeout, function() if not fired then fired=true; if conn then conn:Disconnect() end; cb(nil) end end)
+    task.delay(timeout,function() if not fired then fired=true; if conn then conn:Disconnect() end; cb(nil) end end)
 end
-local function sendTradeRequest(ownerName, cb)
+local function sendTradeRequest(ownerName,cb)
     cb=cb or function() end
     if type(fireproximityprompt)~="function" then cb("no_remote","executor missing fireproximityprompt"); return end
-    local prompt=findSendTradePrompt(ownerName)
-    if not prompt then cb("error","not in server"); return end
+    local prompt=findSendTradePrompt(ownerName); if not prompt then cb("error","not in server"); return end
     if not prompt.Enabled then cb("error","unavailable"); return end
     if not pcall(function() fireproximityprompt(prompt) end) then cb("error","failed"); return end
     local done=false
-    watchNotification(1.5, function(text)
+    watchNotification(1.5,function(text)
         if done then return end; done=true
         if not text then cb("sent",nil); return end
         local l=text:lower()
@@ -229,16 +192,16 @@ local function sendTradeRequest(ownerName, cb)
     end)
 end
 
--- ================= HOP =================
+-- ========== HOP ==========
 local function resolvePlaceId(tier)
-    if not Data.ServerData then return game.PlaceId end
-    if tier=="Pro" then return Data.ServerData.TradePlazaProPlaceId end
-    if tier=="OG" then return Data.ServerData.TradePlazaOgPlaceId end
-    return Data.ServerData.TradePlazaPlaceId
+    if not ServerData then return game.PlaceId end
+    if tier=="Pro" then return ServerData.TradePlazaProPlaceId end
+    if tier=="OG" then return ServerData.TradePlazaOgPlaceId end
+    return ServerData.TradePlazaPlaceId
 end
 local function listServers()
     local pg=LP:FindFirstChild("PlayerGui"); pg=pg and pg:FindFirstChild("TradePlazaServerBrowser"); pg=pg and pg:FindFirstChild("List",true)
-    local list={} ; if not pg then return list end
+    local list={}; if not pg then return list end
     for _,child in ipairs(pg:GetChildren()) do
         if child:IsA("GuiObject") and #child.Name>=30 then
             local expired=false; local seen=Hops.hoppedServers[child.Name]; if seen then expired=os.time()-seen<600 end
@@ -276,7 +239,7 @@ local function hopServer(tier)
     return true
 end
 
--- ================= UI PRIMITIVES =================
+-- ========== UI PRIMITIVES ==========
 local function corner(p,r) local c=Instance.new("UICorner",p); c.CornerRadius=UDim.new(0,r or 8); return c end
 local function stroke(p,c,t,tr) local s=Instance.new("UIStroke",p); s.Color=c or THEME.STROKE; s.Thickness=t or 1; s.Transparency=tr or 0.4; return s end
 local function tween(o,d,pr) TS:Create(o,TweenInfo.new(d or 0.14,Enum.EasingStyle.Quint,Enum.EasingDirection.Out),pr):Play() end
@@ -337,10 +300,9 @@ local function alertSound()
     end)
 end
 
--- ================= MAIN WINDOW =================
+-- ========== MAIN WINDOW ==========
 local sg=Instance.new("ScreenGui"); sg.Name="GuestConvincer"; sg.ResetOnSpawn=false; sg.IgnoreGuiInset=true
 sg.DisplayOrder=999999; sg.ZIndexBehavior=Enum.ZIndexBehavior.Sibling; sg.Parent=GuiRoot
-
 local root=Instance.new("Frame",sg); root.Size=UDim2.fromOffset(370,510)
 root.Position=UDim2.new(Settings.pos.x,0,Settings.pos.y,0); root.BackgroundColor3=THEME.BG; root.BorderSizePixel=0
 local uiScale=Instance.new("UIScale",root); uiScale.Scale=UI_SCALE
@@ -357,7 +319,6 @@ title.BackgroundTransparency=1; title.Font=Enum.Font.GothamBlack; title.Text="GU
 title.TextColor3=THEME.TEXT; title.TextXAlignment=Enum.TextXAlignment.Left; title.ZIndex=2
 local subLine=Instance.new("Frame",header); subLine.Position=UDim2.fromOffset(32,42); subLine.Size=UDim2.fromOffset(150,2)
 subLine.BackgroundColor3=THEME.ACCENT; subLine.BorderSizePixel=0; corner(subLine,1); subLine.ZIndex=2
-
 do
     local dragging,sp,spos
     header.InputBegan:Connect(function(i)
@@ -373,7 +334,6 @@ local tabBar=Instance.new("Frame",root); tabBar.Size=UDim2.new(1,-24,0,36); tabB
 tabBar.BackgroundColor3=THEME.SURF; tabBar.BorderSizePixel=0; tabBar.ZIndex=2; corner(tabBar,10); stroke(tabBar,THEME.STROKE,1,0.55)
 local tabList=Instance.new("UIListLayout",tabBar); tabList.FillDirection=Enum.FillDirection.Horizontal; tabList.SortOrder=Enum.SortOrder.LayoutOrder
 local tabPad=Instance.new("UIPadding",tabBar); tabPad.PaddingLeft=UDim.new(0,4); tabPad.PaddingRight=UDim.new(0,4); tabPad.PaddingTop=UDim.new(0,4); tabPad.PaddingBottom=UDim.new(0,4)
-
 local pages={}; local tabBtns={}
 local function switchTab(name) for k,p in pairs(pages) do p.Visible=(k==name) end; for k,b in pairs(tabBtns) do tween(b,0.14,{BackgroundColor3=k==name and THEME.ACCENT2 or THEME.SURF}); b.TextColor3=k==name and THEME.TEXT or THEME.OFF_TEXT end end
 local function addTab(name,label,order)
@@ -383,16 +343,14 @@ local function addTab(name,label,order)
     b.MouseButton1Click:Connect(function() switchTab(name) end); tabBtns[name]=b
 end
 addTab("list","TRADE",1); addTab("chat","TRANSLATE",2); addTab("presets","PRESETS",3); addTab("settings","SETTINGS",4)
-
 local content=Instance.new("Frame",root); content.Size=UDim2.new(1,-24,1,-126); content.Position=UDim2.fromOffset(12,108)
 content.BackgroundTransparency=1; content.ZIndex=2
-
 local footer=Instance.new("TextLabel",root); footer.Name="Footer"
 footer.AnchorPoint=Vector2.new(0.5,1); footer.Position=UDim2.new(0.5,0,1,-8); footer.Size=UDim2.new(1,-24,0,14)
 footer.BackgroundTransparency=1; footer.Font=Enum.Font.GothamBlack; footer.Text="GUEST · CONVINCER"
 footer.TextSize=11; footer.TextColor3=THEME.DIM; footer.ZIndex=3
 
--- ================= TRADE TAB =================
+-- ========== TRADE TAB ==========
 local listFrame=Instance.new("Frame",content); listFrame.Size=UDim2.fromScale(1,1); listFrame.BackgroundTransparency=1; pages.list=listFrame
 local searchBox=Instance.new("TextBox",listFrame); searchBox.Size=UDim2.new(1,0,0,30); searchBox.Position=UDim2.fromOffset(0,0)
 searchBox.BackgroundColor3=THEME.SURF; searchBox.Text=""; searchBox.PlaceholderText="search player, brainrot, mutation, rarity..."
@@ -408,25 +366,35 @@ local lp=Instance.new("UIPadding",listScroll); lp.PaddingLeft=UDim.new(0,2); lp.
 local ll=Instance.new("UIListLayout",listScroll); ll.Padding=UDim.new(0,7); ll.SortOrder=Enum.SortOrder.LayoutOrder
 local LIST_LAST=""
 
--- card layout constants
-local CARD_H = 54
-local BTN_W = 88
-local BTN_H = 34
-local EXP_W = 32
-local GAP = 6
--- action row occupies right side: [TRADE][GAP][EXP] = BTN_W + GAP + EXP_W = 126; +12 right pad = 138
-local RIGHT_RESERVE = BTN_W + GAP + EXP_W + 12
--- avatar + rank reserve
-local LEFT_RESERVE_NOAV = 24 + 8
-local LEFT_RESERVE_AV = 24 + 34 + 8
-
 local function renderTraders()
-    local all=scanTraders()
+    if not Sync then return end
+    local plots=workspace:FindFirstChild("Plots"); if not plots then return end
+    local byPlayer={}
+    for _,child in ipairs(plots:GetChildren()) do
+        local ok,t=pcall(function() return Sync:GetTableFromChannel(child.Name) end)
+        if ok and type(t)=="table" and type(t.AnimalList)=="table" then
+            local owner=t.Owner; local name=typeof(owner)=="Instance" and owner.Name or tostring(owner)
+            if name~=LP.Name and name~=LP.DisplayName then
+                for _,item in ipairs(t.AnimalList) do
+                    local def=Animals[item.Index]
+                    if def and (tostring(def.Rarity)=="Secret" or tostring(def.Rarity)=="OG") then
+                        local p=byPlayer[name]
+                        if not p then p={player=name,playerObj=Players:FindFirstChild(name),items={},totalGen=0}; byPlayer[name]=p end
+                        local g=genOf(item)
+                        p.items[#p.items+1]={index=item.Index,mutation=item.Mutation~="None" and item.Mutation or nil,gen=g,rarity=tostring(def.Rarity)}
+                        p.totalGen=p.totalGen+g
+                    end
+                end
+            end
+        end
+    end
+    local list={}; for _,p in pairs(byPlayer) do table.sort(p.items,function(a,b) return a.gen>b.gen end); list[#list+1]=p end
+    table.sort(list,function(a,b) return a.totalGen>b.totalGen end)
     local q=searchQuery:lower():gsub("^%s+",""):gsub("%s+$","")
-    local filtered=all
+    local filtered=list
     if q~="" then
         filtered={}
-        for _,p in ipairs(all) do
+        for _,p in ipairs(list) do
             local hit=p.player:lower():find(q,1,true)~=nil
             if not hit then for _,it in ipairs(p.items) do
                 if it.index:lower():find(q,1,true) or (it.mutation and it.mutation:lower():find(q,1,true)) or it.rarity:lower():find(q,1,true) then hit=true; break end
@@ -442,50 +410,41 @@ local function renderTraders()
         local f=Instance.new("Frame",listScroll); f.Size=UDim2.new(1,0,0,80); f.BackgroundTransparency=1
         local t=Instance.new("TextLabel",f); t.Size=UDim2.fromScale(1,1); t.BackgroundTransparency=1
         t.Font=Enum.Font.GothamMedium; t.TextSize=12; t.TextColor3=THEME.OFF_TEXT; t.TextWrapped=true
-        t.Text=q~="" and ('no matches for "'..q..'"') or "no Secret/OG traders found.\nif this stays empty, your executor cannot read game data."
+        t.Text=q~="" and ('no matches for "'..q..'"') or "no Secret/OG traders found."
         return
     end
     for i,p in ipairs(filtered) do
-        local card=Instance.new("Frame",listScroll); card.Size=UDim2.new(1,0,0,CARD_H); card.BackgroundTransparency=1
+        local card=Instance.new("Frame",listScroll); card.Size=UDim2.new(1,0,0,54); card.BackgroundTransparency=1
         card.LayoutOrder=i; card.ClipsDescendants=true; card.Name="P_"..i
-        local inner=Instance.new("Frame",card); inner.Size=UDim2.new(1,-4,0,CARD_H-2); inner.Position=UDim2.fromOffset(2,1)
+        local inner=Instance.new("Frame",card); inner.Size=UDim2.new(1,-4,0,52); inner.Position=UDim2.fromOffset(2,1)
         inner.BackgroundColor3=THEME.SURF; inner.BorderSizePixel=0; corner(inner,10); stroke(inner,THEME.STROKE,1,0.6)
-        local rank=Instance.new("TextLabel",inner); rank.Size=UDim2.fromOffset(20,CARD_H); rank.Position=UDim2.fromOffset(4,0)
-        rank.BackgroundTransparency=1; rank.Font=Enum.Font.GothamBlack; rank.Text="# "..i; rank.TextSize=10
-        rank.TextColor3=THEME.ACCENT; rank.TextXAlignment=Enum.TextXAlignment.Center
-        local leftRes
+        local rank=Instance.new("TextLabel",inner); rank.Size=UDim2.fromOffset(20,54); rank.Position=UDim2.fromOffset(2,0)
+        rank.BackgroundTransparency=1; rank.Font=Enum.Font.GothamBlack; rank.Text="# "..i; rank.TextSize=10; rank.TextColor3=THEME.ACCENT
+        local offsetX=24
         if Settings.showAvatars then
-            local av=Instance.new("ImageLabel",inner); av.Size=UDim2.fromOffset(34,34); av.Position=UDim2.fromOffset(24,10)
+            local av=Instance.new("ImageLabel",inner); av.Size=UDim2.fromOffset(34,34); av.Position=UDim2.fromOffset(24,9)
             av.BackgroundColor3=THEME.SURF2; av.BorderSizePixel=0; corner(av,17); av.ZIndex=3
             task.spawn(function()
                 local uid=p.playerObj and p.playerObj.UserId
                 if not uid then pcall(function() uid=Players:GetUserIdFromNameAsync(p.player) end) end
                 if uid then local ok,img=pcall(function() return Players:GetUserThumbnailAsync(uid,Enum.ThumbnailType.HeadShot,Enum.ThumbnailSize.Size48x48) end); if ok and img and av.Parent then av.Image=img end end
             end)
-            leftRes = LEFT_RESERVE_AV
-        else
-            leftRes = LEFT_RESERVE_NOAV
+            offsetX=66
         end
-        local nameW = UDim.new(1, -(leftRes + RIGHT_RESERVE))
-        local nameL=Instance.new("TextLabel",inner); nameL.Size=nameW; nameL.Position=UDim2.fromOffset(leftRes,10)
-        nameL.Size=UDim2.new(1,-(leftRes+RIGHT_RESERVE),0,18)
+        local nameL=Instance.new("TextLabel",inner); nameL.Size=UDim2.new(1,-(offsetX+118),0,18); nameL.Position=UDim2.fromOffset(offsetX,8)
         nameL.BackgroundTransparency=1; nameL.Font=Enum.Font.GothamBold; nameL.Text=p.player; nameL.TextSize=13
         nameL.TextColor3=THEME.TEXT; nameL.TextXAlignment=Enum.TextXAlignment.Left; nameL.TextTruncate=Enum.TextTruncate.AtEnd
-        local sub=Instance.new("TextLabel",inner); sub.Size=UDim2.new(1,-(leftRes+RIGHT_RESERVE),0,14); sub.Position=UDim2.fromOffset(leftRes,30)
-        sub.BackgroundTransparency=1; sub.Font=Enum.Font.GothamBold; sub.Text=#p.items.." • $"..fmt(p.totalGen).."/s"
+        local sub=Instance.new("TextLabel",inner); sub.Size=UDim2.new(1,-(offsetX+118),0,14); sub.Position=UDim2.fromOffset(offsetX,28)
+        sub.BackgroundTransparency=1; sub.Font=Enum.Font.GothamBold; sub.Text=#p.items.." • total $"..fmt(p.totalGen).."/s"
         sub.TextSize=10; sub.TextColor3=THEME.GREEN_STROKE; sub.TextXAlignment=Enum.TextXAlignment.Left
 
-        -- action row: TRADE + expand, right-aligned
         local tradeBtn=button(inner,"TRADE",{textSize=10})
-        tradeBtn.Size=UDim2.fromOffset(BTN_W,BTN_H); tradeBtn.Position=UDim2.new(1,-(EXP_W+GAP+12+BTN_W),0.5,-BTN_H/2)
+        tradeBtn.Size=UDim2.fromOffset(90,34); tradeBtn.Position=UDim2.new(1,-96,0.5,-17)
         local armed=false; local armTime=0; local busy=false
-        local function resetTradeBtn()
-            armed=false; busy=false; tradeBtn.Text="TRADE"
-            tween(tradeBtn,0.14,{BackgroundColor3=THEME.ACCENT2})
-        end
+        local function resetTradeBtn() armed=false; busy=false; tradeBtn.Text="TRADE"; tween(tradeBtn,0.14,{BackgroundColor3=THEME.ACCENT2}) end
         tradeBtn.MouseButton1Click:Connect(function()
             if busy then return end
-            if Settings.requireConfirmManualTrade and not (armed and (os.clock()-armTime)<4) then
+            if Settings.requireConfirmTrade and not (armed and (os.clock()-armTime)<4) then
                 armed=true; armTime=os.clock(); tradeBtn.Text="CONFIRM"
                 tween(tradeBtn,0.1,{BackgroundColor3=THEME.DANGER})
                 task.delay(4.2,function() if tradeBtn.Parent and armed and (os.clock()-armTime)>=4 then resetTradeBtn() end end)
@@ -494,24 +453,18 @@ local function renderTraders()
             busy=true; tradeBtn.Text="..."
             sendTradeRequest(p.player,function(status,detail)
                 if not tradeBtn.Parent then return end
-                if status=="sent" then
-                    tradeBtn.Text="SENT"; tradeBtn.BackgroundColor3=THEME.SUCCESS
-                elseif status=="no_remote" then
-                    tradeBtn.Text="RETRY"; tradeBtn.BackgroundColor3=THEME.RETRY
-                else
-                    tradeBtn.Text="FAILED"; tradeBtn.BackgroundColor3=THEME.FAIL
-                end
+                if status=="sent" then tradeBtn.Text="SENT"; tradeBtn.BackgroundColor3=THEME.SUCCESS
+                elseif status=="no_remote" then tradeBtn.Text="RETRY"; tradeBtn.BackgroundColor3=THEME.RETRY
+                else tradeBtn.Text="FAILED"; tradeBtn.BackgroundColor3=THEME.FAIL end
                 task.delay(2.2,function() if tradeBtn.Parent then resetTradeBtn() end end)
             end)
         end)
         local expandBtn=button(inner,"v",{color=THEME.SURF2,press=THEME.ACCENT2,stroke=THEME.STROKE,strokeT=0.5,textSize=13})
-        expandBtn.Size=UDim2.fromOffset(EXP_W,BTN_H); expandBtn.Position=UDim2.new(1,-(EXP_W+12),0.5,-BTN_H/2)
-
-        -- detail list
-        local detail=Instance.new("Frame",card); detail.Size=UDim2.new(1,0,0,0); detail.Position=UDim2.fromOffset(0,CARD_H)
+        expandBtn.Size=UDim2.fromOffset(32,34); expandBtn.Position=UDim2.new(1,-36,0.5,-17)
+        local detail=Instance.new("Frame",card); detail.Size=UDim2.new(1,0,0,0); detail.Position=UDim2.fromOffset(0,54)
         detail.BackgroundTransparency=1; detail.BorderSizePixel=0; detail.ClipsDescendants=true
         local dl=Instance.new("UIListLayout",detail); dl.Padding=UDim.new(0,6); dl.SortOrder=Enum.SortOrder.LayoutOrder
-        local dp=Instance.new("UIPadding",detail); dp.PaddingTop=UDim.new(0,6); dp.PaddingLeft=UDim.new(0,16); dp.PaddingRight=UDim.new(0,6); dp.PaddingBottom=UDim.new(0,6)
+        local dp=Instance.new("UIPadding",detail); dp.PaddingTop=UDim.new(0,6); dp.PaddingLeft=UDim.new(0,16); dp.PaddingRight=UDim.new(0,4); dp.PaddingBottom=UDim.new(0,6)
         for j,it in ipairs(p.items) do
             local row=Instance.new("Frame",detail); row.Size=UDim2.new(1,0,0,42); row.LayoutOrder=j
             row.BackgroundColor3=THEME.SURF2; row.BorderSizePixel=0; corner(row,8); stroke(row,THEME.STROKE,1,0.7)
@@ -519,7 +472,7 @@ local function renderTraders()
             nm.BackgroundTransparency=1; nm.Font=Enum.Font.GothamBold; nm.RichText=true
             local mut=it.mutation
             if mut then
-                local def=Data.Mutations[mut]; local col=def and def.MainColor and tostring(def.MainColor) or nil; local hex="B0B0B0"
+                local def=Mutations[mut]; local col=def and def.MainColor and tostring(def.MainColor) or nil; local hex="B0B0B0"
                 if col then local nums={}; for m in col:gmatch("[%d%.]+") do nums[#nums+1]=tonumber(m) end; if #nums>=3 then hex=Color3.new(nums[1],nums[2],nums[3]):ToHex() end end
                 mut=('  <font color="#%s">%s</font>'):format(hex,mut)
             end
@@ -528,12 +481,11 @@ local function renderTraders()
             sub2.BackgroundTransparency=1; sub2.Font=Enum.Font.GothamBold; sub2.Text="$"..fmt(it.gen).."/s  •  "..it.rarity
             sub2.TextSize=10; sub2.TextColor3=THEME.GREEN_STROKE; sub2.TextXAlignment=Enum.TextXAlignment.Left
         end
-        local expanded=false; local totalH=#p.items*(42+6)+12
-        local function setExpand(on,instant)
+        local expanded=false; local totalH=#p.items*48+6+32
+        local function setExpand(on)
             expanded=on; expandBtn.Text=on and "^" or "v"
             local h=on and totalH or 0
-            if instant then detail.Size=UDim2.new(1,0,0,h); card.Size=UDim2.new(1,0,0,CARD_H+h)
-            else tween(detail,0.22,{Size=UDim2.new(1,0,0,h)}); tween(card,0.22,{Size=UDim2.new(1,0,0,CARD_H+h)}) end
+            tween(detail,0.22,{Size=UDim2.new(1,0,0,h)}); tween(card,0.22,{Size=UDim2.new(1,0,0,54+h)})
         end
         expandBtn.MouseButton1Click:Connect(function() setExpand(not expanded) end)
         inner.MouseEnter:Connect(function() tween(inner,0.12,{BackgroundColor3=THEME.SURF2}) end)
@@ -543,7 +495,7 @@ end
 searchBox:GetPropertyChangedSignal("Text"):Connect(function() searchQuery=searchBox.Text; LIST_LAST=""; pcall(renderTraders) end)
 task.spawn(function() while sg.Parent and alive() do pcall(renderTraders); task.wait(1.5) end end)
 
--- ================= TRANSLATE TAB =================
+-- ========== TRANSLATE TAB ==========
 local chatPage=Instance.new("Frame",content); chatPage.Size=UDim2.fromScale(1,1); chatPage.BackgroundTransparency=1; chatPage.Visible=false; pages.chat=chatPage
 local myCard=Instance.new("Frame",chatPage); myCard.Size=UDim2.new(0.5,-5,0,44); myCard.Position=UDim2.fromOffset(0,0)
 myCard.BackgroundColor3=THEME.SURF2; myCard.BorderSizePixel=0; myCard.ZIndex=5; corner(myCard,10); stroke(myCard,THEME.STROKE,1,0.5)
@@ -617,7 +569,7 @@ local logEmpty=Instance.new("TextLabel",logScroll); logEmpty.Size=UDim2.new(1,-1
 logEmpty.Font=Enum.Font.Gotham; logEmpty.Text="their messages appear here, translated via Google Translate"
 logEmpty.TextSize=11; logEmpty.TextColor3=THEME.OFF_TEXT; logEmpty.TextWrapped=true
 
-local logOrder=0; local langVotes={}
+local logOrder=0
 local function pushLog(orig,trans)
     logEmpty.Visible=false; logOrder=logOrder+1
     local f=Instance.new("Frame",logScroll); f.Size=UDim2.new(1,0,0,0); f.AutomaticSize=Enum.AutomaticSize.Y
@@ -631,14 +583,6 @@ local function pushLog(orig,trans)
     t2.BackgroundTransparency=1; t2.Font=Enum.Font.Gotham; t2.Text=orig; t2.TextSize=10
     t2.TextColor3=THEME.OFF_TEXT; t2.TextXAlignment=Enum.TextXAlignment.Left; t2.TextWrapped=true; t2.LayoutOrder=2
     task.defer(function() logScroll.CanvasPosition=Vector2.new(0,logScroll.AbsoluteCanvasSize.Y) end)
-end
-local function voteLanguage(code,weight)
-    if not code or code=="auto" or code=="" then return end
-    langVotes[code]=(langVotes[code] or 0)+weight
-    local best,bn=nil,0
-    for k,v in pairs(langVotes) do if k~="en" and v>bn then best,bn=k,v end end
-    if not best then for k,v in pairs(langVotes) do if v>bn then best,bn=k,v end end end
-    if best and Settings.theirLang~=best then Settings.theirLang=best; theirVal.Text=langName(best); saveCfg() end
 end
 
 local replyBox=Instance.new("TextBox",chatPage); replyBox.Size=UDim2.new(1,0,0,42); replyBox.Position=UDim2.new(0,0,1,-138)
@@ -706,80 +650,48 @@ sendBtn.MouseButton1Click:Connect(function()
     end)
 end)
 
--- ================= AUTO-TRANSLATE (direct port of Slicedz fn30/fn31) =================
--- Slicedz logic:
---   fn28: isMessageFrame(x) = x:IsA("Frame") and x.Name:find("^Message")
---   fn29(sf): collect frames where fn28, sort by LayoutOrder, for each find "Label" descendant, take Text if #>=2 and ~= "Template", tag theirs by PlayerImage.Headshot id ~= LocalPlayer.UserId
---   fn30(sf): n21 = 0; step(): read fn29; if #list < n21 then reset n21=0 and settings.theirLang="auto"; for i=n21+1,#list do if theirs then fn27(text) end end; n21 = #list
---     fn27(text): if #text<2 or text=="Template" then return; if not translatorOn return; spawn: (translated, detected) = translate(text, myLang, "auto"); wordcount; fn26(detected, wordcount); pushLog(text, translated~=text and translated or text)
---     fn26(lang, weight): langVotes[lang]+=weight; pick best != "en"; if better than best pick, set theirLang=lang, update label, save
---   fn31(tlu): spawn: chat = tlu:WaitForChild("TradeLiveTrade",5) or tlu; chat = chat:FindFirstChild("Chat"); if not chat then chat.ChildAdded on tlu waiting for "Chat"; else for NormalChat/RestrictedChat -> ScrollingFrame -> fn30(sf)
---   plus playerGui.ChildAdded watch for TradeLiveTrade
--- This implementation reproduces that pipeline exactly, with Google Translate as translator backend.
-
-local transSeen={}   -- per-scrollingframe state: { n = int, votes = {}, sig = string }
-local function getSeen(sf) local s=transSeen[sf]; if not s then s={n=0,votes={},sig=""}; transSeen[sf]=s end return s end
-
-local function isMessageFrame(obj)
-    return obj:IsA("Frame") and obj.Name:find("^Message") ~= nil
-end
-
-local function collectMessages(sf)
-    local arr={}
-    for _,ch in ipairs(sf:GetChildren()) do
-        if isMessageFrame(ch) then arr[#arr+1]=ch end
-    end
+-- ========== AUTO-TRANSLATE (Slicedz fn30/fn31 port) ==========
+local transState={}
+local function getState(sf) local s=transState[sf]; if not s then s={n=0,votes={}}; transState[sf]=s end return s end
+local function isMsgF(o) return o:IsA("Frame") and o.Name:find("^Message")~=nil end
+local function collect(sf)
+    local arr={}; for _,ch in ipairs(sf:GetChildren()) do if isMsgF(ch) then arr[#arr+1]=ch end end
     table.sort(arr,function(a,b) return (a.LayoutOrder or 0)<(b.LayoutOrder or 0) end)
     local out={}
     for _,f in ipairs(arr) do
-        local label=f:FindFirstChild("Label",true)
-        local txt=label and label.Text
+        local lbl=f:FindFirstChild("Label",true); local txt=lbl and lbl.Text
         if type(txt)=="string" and #txt>=2 and txt~="Template" then
             local theirs=true
-            local pi=f:FindFirstChild("PlayerImage")
-            pi=pi and pi:FindFirstChild("Headshot")
-            if pi and type(pi.Image)=="string" then
-                local m=pi.Image:match("id=(%d+)")
-                if m and tonumber(m)==LP.UserId then theirs=false end
-            end
-            out[#out+1]={text=txt,theirs=theirs,frame=f}
+            local pi=f:FindFirstChild("PlayerImage"); pi=pi and pi:FindFirstChild("Headshot")
+            if pi and type(pi.Image)=="string" then local m=pi.Image:match("id=(%d+)"); if m and tonumber(m)==LP.UserId then theirs=false end end
+            out[#out+1]={text=txt,theirs=theirs}
         end
     end
     return out
 end
-
-local function handleTranslation(sf, text)
-    local s=getSeen(sf)
+local function translateAndLog(sf,text)
+    local s=getState(sf)
     task.spawn(function()
-        local translated, detected = googleTranslate(text, Settings.myLang, "auto")
+        local tr,det=googleTranslate(text,Settings.myLang,"auto")
         local wc=0; for _ in tostring(text):gmatch("%S+") do wc=wc+1 end
-        if detected and detected~="auto" and detected~="" then
-            s.votes[detected]=(s.votes[detected] or 0)+math.clamp(wc,1,8)
+        if det and det~="auto" and det~="" then
+            s.votes[det]=(s.votes[det] or 0)+math.clamp(wc,1,8)
             local best,bn=nil,0
             for k,v in pairs(s.votes) do if k~="en" and v>bn then best,bn=k,v end end
             if not best then for k,v in pairs(s.votes) do if v>bn then best,bn=k,v end end end
-            if best and Settings.theirLang~=best then
-                Settings.theirLang=best; theirVal.Text=langName(best); saveCfg()
-            end
+            if best and Settings.theirLang~=best then Settings.theirLang=best; theirVal.Text=langName(best); saveCfg() end
         end
-        pushLog(text, (translated and translated~=text) and translated or text)
+        pushLog(text,(tr and tr~=text) and tr or text)
     end)
 end
-
 local function attachReader(sf)
-    local s=getSeen(sf)
+    local s=getState(sf)
     local function step()
-        local list=collectMessages(sf)
-        if #list < s.n then
-            s.n=0
-            s.votes={}
-            Settings.theirLang="auto"; theirVal.Text=langName("auto")
-        end
-        for i=s.n+1, #list do
+        local list=collect(sf)
+        if #list<s.n then s.n=0; s.votes={}; Settings.theirLang="auto"; theirVal.Text=langName("auto") end
+        for i=s.n+1,#list do
             local m=list[i]
-            if m.theirs and Settings.translatorOn and alive() then
-                handleTranslation(sf, m.text)
-            end
+            if m.theirs and Settings.translatorOn and alive() then translateAndLog(sf,m.text) end
         end
         s.n=#list
     end
@@ -787,7 +699,6 @@ local function attachReader(sf)
     sf.ChildAdded:Connect(function() task.defer(step) end)
     sf.ChildRemoved:Connect(function() task.defer(step) end)
 end
-
 local function attachChatContainer(chat)
     local attached={}
     for _,name in ipairs({"NormalChat","RestrictedChat"}) do
@@ -795,17 +706,10 @@ local function attachChatContainer(chat)
         if c then
             local sf=c:FindFirstChild("ScrollingFrame")
             if sf and not attached[sf] then attached[sf]=true; attachReader(sf) end
-            if not sf then
-                c.ChildAdded:Connect(function(ch)
-                    if ch.Name=="ScrollingFrame" and not attached[ch] then
-                        attached[ch]=true; attachReader(ch)
-                    end
-                end)
-            end
+            if not sf then c.ChildAdded:Connect(function(ch) if ch.Name=="ScrollingFrame" and not attached[ch] then attached[ch]=true; attachReader(ch) end end) end
         end
     end
 end
-
 local function attachTradeUI(tlu)
     task.spawn(function()
         local t2=tlu:WaitForChild("TradeLiveTrade",5) or tlu
@@ -814,23 +718,20 @@ local function attachTradeUI(tlu)
         t2.ChildAdded:Connect(function(c) if c.Name=="Chat" then attachChatContainer(c) end end)
     end)
 end
-
 task.spawn(function()
     local pg=LP:WaitForChild("PlayerGui",30); if not pg then return end
-    local tlu=pg:FindFirstChild("TradeLiveTrade")
-    if tlu then attachTradeUI(tlu) end
+    local tlu=pg:FindFirstChild("TradeLiveTrade"); if tlu then attachTradeUI(tlu) end
     pg.ChildAdded:Connect(function(c) if c.Name=="TradeLiveTrade" then task.defer(function() attachTradeUI(c) end) end end)
 end)
 
--- ================= PRESETS =================
+-- ========== PRESETS ==========
 local presetsPage=Instance.new("Frame",content); presetsPage.Size=UDim2.fromScale(1,1); presetsPage.BackgroundTransparency=1
 presetsPage.Visible=false; pages.presets=presetsPage
 local presetBox=Instance.new("TextBox",presetsPage); presetBox.Size=UDim2.new(1,0,0,42); presetBox.Position=UDim2.fromOffset(0,0)
 presetBox.BackgroundColor3=THEME.SURF; presetBox.Text=""; presetBox.PlaceholderText="write a preset message..."
 presetBox.PlaceholderColor3=THEME.OFF_TEXT; presetBox.Font=Enum.Font.Gotham; presetBox.TextSize=12
 presetBox.TextColor3=THEME.TEXT; presetBox.TextWrapped=true; presetBox.TextXAlignment=Enum.TextXAlignment.Left
-presetBox.TextYAlignment=Enum.TextYAlignment.Top; presetBox.ClearTextOnFocus=false; corner(presetBox,10)
-stroke(presetBox,THEME.STROKE,1,0.55)
+presetBox.TextYAlignment=Enum.TextYAlignment.Top; presetBox.ClearTextOnFocus=false; corner(presetBox,10); stroke(presetBox,THEME.STROKE,1,0.55)
 local pbp=Instance.new("UIPadding",presetBox); pbp.PaddingLeft=UDim.new(0,10); pbp.PaddingTop=UDim.new(0,6); pbp.PaddingRight=UDim.new(0,10)
 local addPreset=button(presetsPage,"+ ADD PRESET",{textSize=11}); addPreset.Size=UDim2.new(1,0,0,28); addPreset.Position=UDim2.fromOffset(0,48)
 local presetScroll=Instance.new("ScrollingFrame",presetsPage); presetScroll.Size=UDim2.new(1,0,1,-86); presetScroll.Position=UDim2.fromOffset(0,84)
@@ -844,18 +745,15 @@ local function renderPresets()
     for i,preset in ipairs(Settings.presets) do
         local card=Instance.new("Frame",presetScroll); card.Size=UDim2.new(1,0,0,66); card.BackgroundColor3=THEME.SURF
         card.BorderSizePixel=0; card.LayoutOrder=i; corner(card,11); stroke(card,THEME.STROKE,1,0.55)
-        local cardInner=Instance.new("Frame",card); cardInner.Size=UDim2.new(1,-20,1,-16); cardInner.Position=UDim2.fromOffset(10,8)
-        cardInner.BackgroundTransparency=1
-        local t=Instance.new("TextLabel",cardInner); t.Size=UDim2.new(1,0,0,22); t.BackgroundTransparency=1
+        local ci=Instance.new("Frame",card); ci.Size=UDim2.new(1,-20,1,-16); ci.Position=UDim2.fromOffset(10,8); ci.BackgroundTransparency=1
+        local t=Instance.new("TextLabel",ci); t.Size=UDim2.new(1,0,0,22); t.BackgroundTransparency=1
         t.Font=Enum.Font.GothamMedium; t.Text=preset; t.TextSize=12; t.TextColor3=THEME.TEXT
         t.TextXAlignment=Enum.TextXAlignment.Left; t.TextTruncate=Enum.TextTruncate.AtEnd
-        local btnRow=Instance.new("Frame",cardInner); btnRow.Size=UDim2.new(1,0,0,20); btnRow.Position=UDim2.new(0,0,1,-20)
-        btnRow.BackgroundTransparency=1
-        local bl=Instance.new("UIListLayout",btnRow); bl.FillDirection=Enum.FillDirection.Horizontal
-        bl.Padding=UDim.new(0,6); bl.SortOrder=Enum.SortOrder.LayoutOrder
+        local row=Instance.new("Frame",ci); row.Size=UDim2.new(1,0,0,20); row.Position=UDim2.new(0,0,1,-20); row.BackgroundTransparency=1
+        local rl=Instance.new("UIListLayout",row); rl.FillDirection=Enum.FillDirection.Horizontal; rl.Padding=UDim.new(0,6); rl.SortOrder=Enum.SortOrder.LayoutOrder
         local function mk(txt,order,opts)
             opts=opts or {color=THEME.SURF2,press=THEME.ACCENT2,stroke=THEME.STROKE,strokeT=0.5}
-            local b=button(btnRow,txt,{color=opts.color,press=opts.press,stroke=opts.stroke,strokeT=opts.strokeT,radius=6,textSize=10})
+            local b=button(row,txt,{color=opts.color,press=opts.press,stroke=opts.stroke,strokeT=opts.strokeT,radius=6,textSize=10})
             b.Size=UDim2.new(0.25,-4.5,1,0); b.LayoutOrder=order; return b
         end
         local send=mk("SEND",1,{color=THEME.ACCENT2,press=THEME.ACCENT,stroke=THEME.ACCENT,strokeT=0.4})
@@ -881,7 +779,7 @@ addPreset.MouseButton1Click:Connect(function()
 end)
 renderPresets()
 
--- ================= SETTINGS =================
+-- ========== SETTINGS ==========
 local settingsPage=Instance.new("Frame",content); settingsPage.Size=UDim2.fromScale(1,1); settingsPage.BackgroundTransparency=1
 settingsPage.Visible=false; pages.settings=settingsPage
 local setScroll=Instance.new("ScrollingFrame",settingsPage); setScroll.Size=UDim2.fromScale(1,1); setScroll.BackgroundTransparency=1
@@ -897,7 +795,7 @@ local function section(text,order)
     local line=Instance.new("Frame",f); line.Size=UDim2.new(1,0,0,1); line.Position=UDim2.new(0,0,1,-1)
     line.BackgroundColor3=THEME.STROKE; line.BackgroundTransparency=0.6; line.BorderSizePixel=0
 end
-local function toggleRow(label,key,order,onChange)
+local function toggleRow(label,key,order)
     local b=Instance.new("TextButton",setScroll); b.Size=UDim2.new(1,0,0,36); b.LayoutOrder=order
     b.AutoButtonColor=false; b.BackgroundColor3=THEME.SURF; b.Text=""; b.ZIndex=5; corner(b,9); stroke(b,THEME.STROKE,1,0.55)
     local t=Instance.new("TextLabel",b); t.Size=UDim2.new(1,-64,1,0); t.Position=UDim2.fromOffset(14,0)
@@ -912,15 +810,13 @@ local function toggleRow(label,key,order,onChange)
         Settings[key]=not Settings[key]
         tween(pill,0.12,{BackgroundColor3=Settings[key] and THEME.GREEN1 or THEME.SURF2})
         tween(knob,0.15,{Position=Settings[key] and UDim2.new(1,-19,0.5,-8) or UDim2.new(0,3,0.5,-8),BackgroundColor3=Settings[key] and THEME.GREEN_STROKE or THEME.OFF_TEXT})
-        saveCfg(); if onChange then onChange() end
+        saveCfg()
     end)
 end
-section("SAFETY",1)
-toggleRow("Confirm before sending trade (2-step)", "requireConfirmManualTrade", 2)
-section("TRADE HEADER",4)
-toggleRow("Show SHOW BASE + FRIEND in trade header", "showHeaderButtons", 5)
+section("TRADE",1)
+toggleRow("Confirm before sending trade (2-step)","requireConfirmTrade",2)
 section("SERVER HOPPING",10)
-toggleRow("Auto-hop until priority", "autoHop", 11)
+toggleRow("Auto-hop until priority","autoHop",11)
 local tierFrame=Instance.new("Frame",setScroll); tierFrame.Size=UDim2.new(1,0,0,30); tierFrame.LayoutOrder=12; tierFrame.BackgroundTransparency=1
 local tfl=Instance.new("UIListLayout",tierFrame); tfl.FillDirection=Enum.FillDirection.Horizontal; tfl.Padding=UDim.new(0,6); tfl.SortOrder=Enum.SortOrder.LayoutOrder
 local tierBtns={}
@@ -944,7 +840,7 @@ hopNow.MouseButton1Click:Connect(function() hopServer(Settings.hopTier) end)
 section("ALERTS",20)
 toggleRow("Alert sound on priority","alertSound",21)
 section("DISPLAY",30)
-toggleRow("Show player avatars","showAvatars",31,function() LIST_LAST="" end)
+toggleRow("Show player avatars","showAvatars",31)
 toggleRow("Beam to trader's base","beamToBase",32)
 section("PRIORITY BRAINROTS",40)
 local prioBox=Instance.new("TextBox",setScroll); prioBox.Size=UDim2.new(1,0,0,34); prioBox.LayoutOrder=41
@@ -982,7 +878,7 @@ local function renderSuggest()
     for _,ch in ipairs(prioSuggest:GetChildren()) do if ch:IsA("TextButton") then ch:Destroy() end end
     local q=prioBox.Text:lower():gsub("^%s+",""):gsub("%s+$",""); if q=="" then return end
     local shown=0
-    for k,def in pairs(Data.Animals) do
+    for k,def in pairs(Animals) do
         if type(def)=="table" and def.Rarity and not inPriority(k) and k:lower():find(q,1,true) then
             shown=shown+1
             local b=Instance.new("TextButton",prioSuggest); b.Size=UDim2.new(1,0,0,30); b.AutoButtonColor=false
@@ -997,8 +893,7 @@ end
 prioBox:GetPropertyChangedSignal("Text"):Connect(renderSuggest)
 renderPriority()
 
--- ================= PRIORITY SCAN + AUTO HOP =================
-local function findPriorityInServer()
+local function findPriority()
     if not Settings.priorityList or #Settings.priorityList==0 then return nil end
     local set={}; for _,v in ipairs(Settings.priorityList) do set[tostring(v):lower()]=true end
     local plots=workspace:FindFirstChild("Plots"); if not plots or not Sync then return nil end
@@ -1006,11 +901,9 @@ local function findPriorityInServer()
         local ok,t=pcall(function() return Sync:GetTableFromChannel(child.Name) end)
         if ok and type(t)=="table" and type(t.AnimalList)=="table" then
             for _,item in ipairs(t.AnimalList) do
-                if type(item)=="table" and item.Index and item.Index~="Empty" then
-                    if set[tostring(item.Index):lower()] then
-                        local owner=typeof(t.Owner)=="Instance" and t.Owner.Name or tostring(t.Owner)
-                        return owner,item.Index
-                    end
+                if type(item)=="table" and item.Index and item.Index~="Empty" and set[tostring(item.Index):lower()] then
+                    local owner=typeof(t.Owner)=="Instance" and t.Owner.Name or tostring(t.Owner)
+                    return owner,item.Index
                 end
             end
         end
@@ -1021,7 +914,7 @@ task.spawn(function()
     task.wait(4)
     while sg.Parent and alive() do
         if Settings.autoHop and Settings.priorityList and #Settings.priorityList>0 then
-            local owner,index=findPriorityInServer()
+            local owner,index=findPriority()
             if index then Toast("PRIORITY FOUND",index..(owner and (" @ "..owner) or ""),3); alertSound(); Settings.autoHop=false; saveCfg(); break
             else
                 for k,t in pairs(Hops.hoppedServers) do if os.time()-t>600 then Hops.hoppedServers[k]=nil end end
@@ -1032,7 +925,7 @@ task.spawn(function()
     end
 end)
 
--- ================= BEAM =================
+-- ========== BEAM ==========
 local Beam={owner=nil,hl=nil,beam=nil,att0=nil,att1=nil,conn=nil}
 local function clearBeam()
     if Beam.conn then Beam.conn:Disconnect(); Beam.conn=nil end
@@ -1065,7 +958,7 @@ local function beamTo(owner)
     Toast("BEAM","tracking "..owner.."'s base",2); return true
 end
 
--- ================= BASE VIEWER (direct port of Slicedz) =================
+-- ========== BASE VIEWER (Slicedz 3D port) ==========
 local BasePanel, BaseMeta
 do
     local pg=LP:FindFirstChildOfClass("PlayerGui") or GuiRoot
@@ -1129,8 +1022,7 @@ do
     railKnob.ZIndex=61; corner(railKnob,5)
 
     local floorBtns={}
-    local state={ animalList={}, presentList={}, selected=1, camPos=Vector3.new(0,32,8), camTarget=Vector3.new(0,4,-37),
-        plotInst=nil, labels={}, currentWorld=nil, currentFloor=nil }
+    local state={animalList={},presentList={},selected=1,camPos=Vector3.new(0,32,8),camTarget=Vector3.new(0,4,-37),plotInst=nil,labels={},currentWorld=nil}
     for _,n in ipairs({3,2,1}) do
         local b=Instance.new("TextButton",BasePanel); b.Size=UDim2.fromOffset(34,34); b.AnchorPoint=Vector2.new(0.5,0.5)
         local y=n==3 and 0.16 or n==2 and 0.5 or 0.84
@@ -1142,7 +1034,6 @@ do
         floorBtns[n]=b
     end
 
-    -- SLOT_POS / PODIUM / FLOOR_Y (ported from Slicedz)
     local SLOT_POS={
         {-18.954,-2.509,-21.346,-90},[2]={-18.954,-2.509,-28.846,-90},[3]={-18.954,-2.509,-36.346,-90},
         [4]={-18.954,-2.509,-43.846,-90},[5]={-18.954,-2.509,-51.346,-90},
@@ -1162,32 +1053,31 @@ do
         {size=Vector3.new(6,0.25,6),color=Color3.fromRGB(69,71,80),yOff=-1.88,top=Enum.SurfaceType.Studs},
     }
     local function slotFloor(n) return n<=10 and 1 or n<=18 and 2 or 3 end
-
-    local function getAnimatedModel(index, mutation, traits)
-        if Data.SharedAnimals and Data.SharedAnimals.GetAnimatedModel then
-            local ok,res=pcall(function() return Data.SharedAnimals:GetAnimatedModel(index,mutation,traits or {}) end)
+    local function getAnimated(idx,mut,traits)
+        if SharedAnimals and SharedAnimals.GetAnimatedModel then
+            local ok,res=pcall(function() return SharedAnimals:GetAnimatedModel(idx,mut,traits or {}) end)
             if ok and typeof(res)=="Instance" then return res,true end
         end
         if setthreadidentity then pcall(setthreadidentity,8) end
         return nil,false
     end
-    local function cloneModel(index)
-        local m=Data.AssetCache and Data.AssetCache:FindFirstChild(index)
-        if not m and Data.Models then m=Data.Models:FindFirstChild(index) end
+    local function cloneModel(idx)
+        local m=AssetCache and AssetCache:FindFirstChild(idx)
+        if not m and AnimalModels then m=AnimalModels:FindFirstChild(idx) end
         if m and m:IsA("Model") then local ok,c=pcall(function() return m:Clone() end); if ok then return c end end
         return nil
     end
-    local function applyMutationColor(model, mutation)
-        if not mutation or mutation=="None" or mutation=="" then return end
-        local m=Data.Mutations[mutation]; if not m or not m.Palettes then return end
-        local pal=m.Palettes[tonumber(model:GetAttribute(mutation.."Palette") or model:GetAttribute("Palette") or 1) or 1] or m.Palettes[1]
+    local function applyMut(model,mut)
+        if not mut or mut=="None" or mut=="" then return end
+        local m=Mutations[mut]; if not m or not m.Palettes then return end
+        local pal=m.Palettes[tonumber(model:GetAttribute(mut.."Palette") or model:GetAttribute("Palette") or 1) or 1] or m.Palettes[1]
         if not pal then return end
         pcall(function()
             for _,d in ipairs(model:GetDescendants()) do
                 if d:IsA("BasePart") then
                     for _,c in ipairs(d:GetChildren()) do if c:IsA("SurfaceAppearance") then c:Destroy() end end
-                    if mutation~="Rainbow" then
-                        local num=tonumber(d:GetAttribute(mutation.."Color") or d:GetAttribute("Color") or 1) or 1
+                    if mut~="Rainbow" then
+                        local num=tonumber(d:GetAttribute(mut.."Color") or d:GetAttribute("Color") or 1) or 1
                         local col=pal[num] or pal[math.clamp(num,1,#pal)]
                         if typeof(col)=="Color3" then d.Color=col end
                         if d:GetAttribute("Neon") then d.Material=Enum.Material.Neon end
@@ -1204,22 +1094,18 @@ do
         for _,ch in ipairs(labelLayer:GetChildren()) do if ch:IsA("Frame") then ch:Destroy() end end
         local list=state.animalList or {}
         local yOff=FLOOR_Y[floorNum] or 0
-
-        -- walls/floor per floor
         local floorParts
         if floorNum==1 then
             floorParts={
-                {size=Vector3.new(45,2,16),pos=Vector3.new(-14.95,-5.51,-37.32),rot=CFrame.Angles(0,-math.pi/2,0),carpet=false,stud=false},
-                {size=Vector3.new(45,2,16),pos=Vector3.new(14.05,-5.51,-37.32),rot=CFrame.Angles(0,-math.pi/2,0),carpet=false,stud=false},
+                {size=Vector3.new(45,2,16),pos=Vector3.new(-14.95,-5.51,-37.32),rot=CFrame.Angles(0,-math.pi/2,0)},
+                {size=Vector3.new(45,2,16),pos=Vector3.new(14.05,-5.51,-37.32),rot=CFrame.Angles(0,-math.pi/2,0)},
                 {size=Vector3.new(5,11,1),pos=Vector3.new(-0.45,-6.01,-12.32),rot=CFrame.Angles(math.pi/2,0,-math.pi/2),carpet=true},
                 {size=Vector3.new(48,11,2),pos=Vector3.new(-0.45,-5.51,-35.82),rot=CFrame.Angles(math.pi/2,0,-math.pi/2),carpet=true},
                 {size=Vector3.new(50,1,2),pos=Vector3.new(-6.45,-5.51,-36.82),rot=CFrame.Angles(math.pi/2,0,-math.pi/2),stud=true},
                 {size=Vector3.new(50,1,2),pos=Vector3.new(5.55,-5.51,-36.82),rot=CFrame.Angles(math.pi/2,0,-math.pi/2),stud=true},
             }
         elseif floorNum==2 then
-            floorParts={
-                {size=Vector3.new(45,45,2),pos=Vector3.new(-0.45,12.49,-37.32),rot=CFrame.Angles(math.pi/2,0,-math.pi/2)},
-            }
+            floorParts={{size=Vector3.new(45,45,2),pos=Vector3.new(-0.45,12.49,-37.32),rot=CFrame.Angles(math.pi/2,0,-math.pi/2)}}
         else
             floorParts={
                 {size=Vector3.new(45,17,2),pos=Vector3.new(-14.45,29.49,-37.32),rot=CFrame.Angles(math.pi/2,0,-math.pi/2)},
@@ -1230,10 +1116,9 @@ do
         for _,p in ipairs(floorParts) do
             local part=Instance.new("Part"); part.Anchored=true; part.CanCollide=false; part.CanQuery=false
             part.CanTouch=false; part.CastShadow=false; part.Material=Enum.Material.SmoothPlastic
-            part.Color = p.carpet and Color3.fromRGB(196,76,28) or p.stud and Color3.fromRGB(91,93,105) or Color3.fromRGB(99,95,98)
+            part.Color=p.carpet and Color3.fromRGB(196,76,28) or p.stud and Color3.fromRGB(91,93,105) or Color3.fromRGB(99,95,98)
             part.Size=p.size; part.CFrame=CFrame.new(p.pos.X,p.pos.Y-yOff,p.pos.Z)*p.rot; part.Parent=newWorld
         end
-
         for k,v in pairs(SLOT_POS) do
             if slotFloor(k)==floorNum then
                 local baseCF=CFrame.new(v[1],v[2]-yOff,v[3])*CFrame.Angles(0,math.rad(v[4]),0)
@@ -1245,16 +1130,16 @@ do
                 end
                 state.labels[#state.labels+1]={world=(baseCF*CFrame.new(0,-0.6,0)).Position,kind="slot",text=tostring(k)}
                 local item=list[k]
-                local isEmpty = (item==nil) or (item=="Empty") or (type(item)=="table" and item.Index=="Empty") or (type(item)~="table")
+                local isEmpty=(item==nil) or (item=="Empty") or (type(item)=="table" and item.Index=="Empty") or (type(item)~="table")
                 if not isEmpty then
                     local idx=item.Index
                     local mut=item.Mutation and item.Mutation~="None" and item.Mutation~="" and item.Mutation or nil
-                    local mdl,isAnim=getAnimatedModel(idx,mut,item.Traits)
+                    local mdl,isAnim=getAnimated(idx,mut,item.Traits)
                     if not mdl then mdl=cloneModel(idx); isAnim=false end
                     if setthreadidentity then pcall(setthreadidentity,8) end
                     if mdl then
                         for _,d in ipairs(mdl:GetDescendants()) do if d:IsA("Script") or d:IsA("LocalScript") then d:Destroy() end end
-                        if mut and not isAnim then applyMutationColor(mdl,mut) end
+                        if mut and not isAnim then applyMut(mdl,mut) end
                         local slotCF=baseCF*CFrame.new(0,-1.5,0)
                         for _,d in ipairs(mdl:GetDescendants()) do if d:IsA("BasePart") then d.Anchored=true end end
                         pcall(function() mdl:PivotTo(slotCF) end)
@@ -1274,37 +1159,31 @@ do
                                 end
                             end)
                         end
-                        local def=Data.Animals[idx]; local rarity=def and tostring(def.Rarity) or nil
-                        local rar=rarity and Data.Rarities[rarity]
+                        local def=Animals[idx]; local rarity=def and tostring(def.Rarity) or nil
+                        local rar=rarity and Rarities[rarity]
                         local col=rar and rar.Color or Color3.new(1,1,1)
                         local _,size=mdl:GetBoundingBox()
                         local overheadAtt=mdl:FindFirstChild("OVERHEAD_ATTACHMENT",true)
                         local yb=size.Y*0.75*((def and def.OverheadYOffsetModifier) or 1)
-                        local wp = overheadAtt and overheadAtt:IsA("Attachment") and (overheadAtt.WorldPosition+Vector3.new(0,1.2,0))
-                            or (mdl:GetPivot()*CFrame.new(0,yb,0)).Position
-                        state.labels[#state.labels+1]={
-                            track=mdl, trackYOffset=yb, trackAttachment=overheadAtt, world=wp,
-                            kind="overhead", name=idx, gen="$"..fmt(genOf(item)).."/s", mutation=mut,
-                            rarity=rarity, rarityColor=col, index=idx, traits=item.Traits,
-                        }
+                        local wp=overheadAtt and overheadAtt:IsA("Attachment") and (overheadAtt.WorldPosition+Vector3.new(0,1.2,0)) or (mdl:GetPivot()*CFrame.new(0,yb,0)).Position
+                        state.labels[#state.labels+1]={track=mdl,trackYOffset=yb,trackAttachment=overheadAtt,world=wp,kind="overhead",
+                            name=idx,gen="$"..fmt(genOf(item)).."/s",mutation=mut,rarity=rarity,rarityColor=col,index=idx,traits=item.Traits}
                     end
                 end
             end
         end
-
         newWorld.Parent=viewportFrame
         if oldWorld then pcall(function() oldWorld:Destroy() end) end
         state.currentWorld=newWorld
-        state.currentFloor=floorNum
         floorLabel.Text="FLOOR "..floorNum
         rebuildLabels()
     end
 
-    local function project(worldPos,camCF,fov,absSize)
-        if absSize.X<1 or absSize.Y<1 then return nil end
-        local v=camCF:PointToObjectSpace(worldPos); if v.Z>=0 then return nil end
-        local ar=absSize.X/absSize.Y; local tan=math.tan(math.rad(fov)/2)
-        return Vector2.new((v.X/-v.Z/tan*ar*0.5+0.5)*absSize.X,(1-v.Y/-v.Z/tan*0.5+0.5)*absSize.Y),-v.Z
+    local function project(wp,camCF,fov,as)
+        if as.X<1 or as.Y<1 then return nil end
+        local v=camCF:PointToObjectSpace(wp); if v.Z>=0 then return nil end
+        local ar=as.X/as.Y; local tan=math.tan(math.rad(fov)/2)
+        return Vector2.new((v.X/-v.Z/tan*ar*0.5+0.5)*as.X,(1-v.Y/-v.Z/tan*0.5+0.5)*as.Y),-v.Z
     end
     local labelObjs={}
     local function rebuildLabels()
@@ -1331,12 +1210,8 @@ do
                     e.LayoutOrder=order; Instance.new("UIStroke",e); return e
                 end
                 if l.mutation then
-                    local mc=Color3.new(1,1,1)
-                    local mdef=Data.Mutations[l.mutation]
-                    if mdef and mdef.MainColor then
-                        local nums={}; for m in tostring(mdef.MainColor):gmatch("[%d%.]+") do nums[#nums+1]=tonumber(m) end
-                        if #nums>=3 then mc=Color3.new(nums[1],nums[2],nums[3]) end
-                    end
+                    local mc=Color3.new(1,1,1); local mdef=Mutations[l.mutation]
+                    if mdef and mdef.MainColor then local nums={}; for m in tostring(mdef.MainColor):gmatch("[%d%.]+") do nums[#nums+1]=tonumber(m) end; if #nums>=3 then mc=Color3.new(nums[1],nums[2],nums[3]) end end
                     mkTxt(l.mutation,0,13,mc)
                 end
                 mkTxt(l.name,1,14,Color3.new(1,1,1))
@@ -1344,42 +1219,34 @@ do
                 mkTxt(l.gen,3,14,Color3.fromRGB(255,247,0))
             end
             f.Size=UDim2.fromOffset(sz.X,sz.Y)
-            labelObjs[#labelObjs+1]={obj=f,world=l.world,track=l.track,trackYOffset=l.trackYOffset,
-                trackAttachment=l.trackAttachment,baseSize=sz}
+            labelObjs[#labelObjs+1]={obj=f,world=l.world,track=l.track,trackYOffset=l.trackYOffset,trackAttachment=l.trackAttachment,baseSize=sz}
         end
     end
 
-    local function updateCamera()
-        camera.CFrame=CFrame.lookAt(state.camPos,state.camTarget); camera.FieldOfView=60
-    end
+    local function updateCamera() camera.CFrame=CFrame.lookAt(state.camPos,state.camTarget); camera.FieldOfView=60 end
     local VIEWS={
         front={pos=Vector3.new(0,31,10),tgt=Vector3.new(0,4,-37)},
         left={pos=Vector3.new(14,9,-36),tgt=Vector3.new(-19,6,-36)},
         right={pos=Vector3.new(-14,9,-36),tgt=Vector3.new(18,6,-36)},
     }
-    local function setView(v)
-        local o=VIEWS[v] or VIEWS.front
-        state.camPos=o.pos; state.camTarget=o.tgt; updateCamera()
-    end
+    local function setView(v) local o=VIEWS[v] or VIEWS.front; state.camPos=o.pos; state.camTarget=o.tgt; updateCamera() end
 
-    local function selectFloor(n, instant)
-        if not instant and (state.selected==n or not (state.presentList and (function() for _,v in ipairs(state.presentList) do if v==n then return true end end return false end)())) then return end
+    local function selectFloor(n,instant)
+        if not instant and state.selected==n then return end
+        local present=false; for _,v in ipairs(state.presentList) do if v==n then present=true; break end end
+        if not instant and not present then return end
         state.selected=n
         for k,b in pairs(floorBtns) do if b.Visible then
             b.TextColor3=k==n and THEME.TEXT or THEME.OFF_TEXT
             tween(b,0.14,{BackgroundColor3=k==n and THEME.ACCENT2 or THEME.SURF2})
         end end
-        local list=state.presentList or {}; local idx=1
-        for i,v in ipairs(list) do if v==n then idx=i; break end end
+        local list=state.presentList or {}; local idx=1; for i,v in ipairs(list) do if v==n then idx=i; break end end
         local frac=#list<=1 and 0.84 or (idx==1 and 0.16 or idx==2 and 0.5 or 0.84)
         tween(railKnob,0.25,{Size=UDim2.new(1,0,frac,0)})
-        labelLayer.Visible=false
-        buildFloor(n)
-        labelLayer.Visible=true
+        labelLayer.Visible=false; buildFloor(n); labelLayer.Visible=true
     end
     for k,b in pairs(floorBtns) do b.MouseButton1Click:Connect(function() selectFloor(k) end) end
 
-    -- view buttons
     local viewBar=Instance.new("Frame",BasePanel); viewBar.Name="ViewBar"; viewBar.AnchorPoint=Vector2.new(0.5,1)
     viewBar.Position=UDim2.new(0.5,-32,1,-12); viewBar.Size=UDim2.new(1,-96,0,34); viewBar.BackgroundTransparency=1; viewBar.ZIndex=62
     local vbl=Instance.new("UIListLayout",viewBar); vbl.FillDirection=Enum.FillDirection.Horizontal; vbl.Padding=UDim.new(0,8)
@@ -1410,7 +1277,7 @@ do
     RunService.RenderStepped:Connect(function()
         if not (BasePanel and BasePanel.Visible and alive()) then return end
         local as=viewFrame.AbsoluteSize; local camCF=camera.CFrame; local fov=camera.FieldOfView
-        local sc=1/((BasePanel:FindFirstChildWhichIsA("UIScale") and BasePanel:FindFirstChildWhichIsA("UIScale").Scale) or 1)
+        local us=BasePanel:FindFirstChildWhichIsA("UIScale"); local sc=1/((us and us.Scale) or 1)
         for _,o in ipairs(labelObjs) do
             local wp=o.world
             if o.trackAttachment and o.trackAttachment.Parent then
@@ -1420,13 +1287,10 @@ do
             end
             local p,depth=project(wp,camCF,fov,as)
             if p and depth then
-                o.obj.Visible=true
-                o.obj.Position=UDim2.fromOffset(p.X*sc,p.Y*sc)
+                o.obj.Visible=true; o.obj.Position=UDim2.fromOffset(p.X*sc,p.Y*sc)
                 local k=math.clamp(45/depth,0.3,1.3)
                 o.obj.Size=UDim2.fromOffset(math.floor(o.baseSize.X*k),math.floor(o.baseSize.Y*k))
-            else
-                o.obj.Visible=false
-            end
+            else o.obj.Visible=false end
         end
     end)
 
@@ -1439,27 +1303,17 @@ do
         local present={}
         if state.plotInst then
             local podiums=state.plotInst:FindFirstChild("AnimalPodiums")
-            if podiums then
-                for _,ch in ipairs(podiums:GetChildren()) do
-                    local num=tonumber(ch.Name); if num then present[num<=10 and 1 or num<=18 and 2 or 3]=true end
-                end
-            end
+            if podiums then for _,ch in ipairs(podiums:GetChildren()) do local num=tonumber(ch.Name); if num then present[num<=10 and 1 or num<=18 and 2 or 3]=true end end end
         end
-        for i=1,28 do
-            local it=state.animalList[i]
-            if type(it)=="table" and it.Index and it.Index~="Empty" then present[i<=10 and 1 or i<=18 and 2 or 3]=true end
-        end
-        state.presentList={}
-        for i=1,3 do if present[i] then state.presentList[#state.presentList+1]=i end end
+        for i=1,28 do local it=state.animalList[i]; if type(it)=="table" and it.Index and it.Index~="Empty" then present[i<=10 and 1 or i<=18 and 2 or 3]=true end end
+        state.presentList={}; for i=1,3 do if present[i] then state.presentList[#state.presentList+1]=i end end
         local list=state.presentList
         if #list<=1 then
-            rail.Visible=false
-            for _,b in pairs(floorBtns) do b.Visible=false end
+            rail.Visible=false; for _,b in pairs(floorBtns) do b.Visible=false end
             viewFrame.Size=UDim2.new(1,-28,1,-104)
         else
-            rail.Visible=true
-            viewFrame.Size=UDim2.new(1,-84,1,-104)
-            local positions = #list==2 and {0.2,0.8} or {0.16,0.5,0.84}
+            rail.Visible=true; viewFrame.Size=UDim2.new(1,-84,1,-104)
+            local positions=#list==2 and {0.2,0.8} or {0.16,0.5,0.84}
             for _,b in pairs(floorBtns) do b.Visible=false end
             local rev={}; for i=#list,1,-1 do rev[#rev+1]=list[i] end
             for i,fnum in ipairs(rev) do
@@ -1471,15 +1325,11 @@ do
         state.selected=list[1] or 1
         state.camPos=Vector3.new(0,32,8); state.camTarget=Vector3.new(0,4,-37)
         updateCamera()
-        labelLayer.Visible=false
-        buildFloor(state.selected)
-        labelLayer.Visible=true
-        for k,b in pairs(floorBtns) do
-            if b.Visible then
-                b.TextColor3=k==state.selected and THEME.TEXT or THEME.OFF_TEXT
-                b.BackgroundColor3=k==state.selected and THEME.ACCENT2 or THEME.SURF2
-            end
-        end
+        labelLayer.Visible=false; buildFloor(state.selected); labelLayer.Visible=true
+        for k,b in pairs(floorBtns) do if b.Visible then
+            b.TextColor3=k==state.selected and THEME.TEXT or THEME.OFF_TEXT
+            b.BackgroundColor3=k==state.selected and THEME.ACCENT2 or THEME.SURF2
+        end end
         local idx=1; for i,v in ipairs(list) do if v==state.selected then idx=i; break end end
         local frac=#list<=1 and 0.84 or (idx==1 and 0.16 or idx==2 and 0.5 or 0.84)
         railKnob.Size=UDim2.new(1,0,frac,0)
@@ -1488,21 +1338,18 @@ do
     BaseMeta.toggle=function(owner)
         if BasePanel.Visible and state.plotInst then
             local plotName=plotOf(owner)
-            local cur=state.plotInst.Name
-            if plotName==cur then BasePanel.Visible=false; return end
+            if plotName==state.plotInst.Name then BasePanel.Visible=false; return end
         end
         BaseMeta.render(owner)
     end
 end
 
--- ================= HEADER INJECTION =================
+-- ========== HEADER INJECTION (SHOW BASE + FRIEND) ==========
 local HeaderBtn={showBase=nil,friend=nil,friendConn=nil,current=nil}
 local function clearHeaderButtons()
     pcall(function() if HeaderBtn.friendConn then HeaderBtn.friendConn:Disconnect() end end)
     HeaderBtn.friendConn=nil
-    for _,k in ipairs({"showBase","friend"}) do
-        local b=HeaderBtn[k]; if b then pcall(function() b:Destroy() end) end; HeaderBtn[k]=nil
-    end
+    for _,k in ipairs({"showBase","friend"}) do local b=HeaderBtn[k]; if b then pcall(function() b:Destroy() end) end; HeaderBtn[k]=nil end
     HeaderBtn.current=nil
 end
 local function getTradePartner()
@@ -1537,7 +1384,6 @@ local function syncFriend(btn,txt,other)
     end)
 end
 local function injectHeaderButtons()
-    if not Settings.showHeaderButtons then clearHeaderButtons(); return end
     if setthreadidentity then pcall(setthreadidentity,8) end
     local pg=LP:FindFirstChild("PlayerGui"); if not pg then return end
     local tl=pg:FindFirstChild("TradeLiveTrade"); local t2=tl and tl:FindFirstChild("TradeLiveTrade")
