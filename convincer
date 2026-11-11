@@ -1,8 +1,7 @@
 -- GuestConvincer.lua
 -- Rebrand of Slicedz Convincer. Theme: Midnight. Translator: Google only.
--- Removed: remote code stager (uDXiPZ3RM5lq3 / nIZ1SF1WeUtiT / game:HttpGet / getfenv), Supabase translate endpoint.
--- Kept: all trade-send logic (v546_5), base viewer (3D), auto-translate (fn30/fn31), hop, presets, header buttons.
--- Added: Settings > Safety > "Confirm before sending trade" (default OFF = Slicedz single click).
+-- Removed: remote code stager, Supabase translate endpoint.
+-- Kept: SEND TRADE (Slicedz single-click by default, confirm optional), 3D base viewer, auto-translate (fn30/fn31), hop, presets, header buttons.
 
 local ENV = (type(getgenv) == "function" and getgenv()) or _G
 pcall(function() if type(ENV.GuestConvincerV1) == "table" and ENV.GuestConvincerV1.Version then ENV.GuestConvincerV1:Destroy() end end)
@@ -10,7 +9,7 @@ local Session = (rawget(ENV, "__GuestConvincerSession") or 0) + 1
 ENV.__GuestConvincerSession = Session
 local function alive() return rawget(ENV, "__GuestConvincerSession") == Session end
 
-local C = { VERSION="4.0.0", FOLDER="GuestConvincer", CFG="GuestConvincer/config.json", HOPS="GuestConvincer/hops.json", ALERT_ID="rbxassetid://6518811702" }
+local C = { VERSION="4.0.1", FOLDER="GuestConvincer", CFG="GuestConvincer/config.json", HOPS="GuestConvincer/hops.json", ALERT_ID="rbxassetid://6518811702" }
 
 local THEME = {
     BG=Color3.fromRGB(10,12,20), SURF=Color3.fromRGB(18,21,32), SURF2=Color3.fromRGB(26,30,44),
@@ -151,7 +150,7 @@ local LANGS={
 local LBC={}; for _,l in ipairs(LANGS) do LBC[l.code]=l.name end
 local function langName(c) if not c or c=="" or c=="auto" then return "—" end return LBC[c] or c:upper() end
 
--- ========== TRADE SEND (Slicedz v546_5) ==========
+-- ========== TRADE SEND ==========
 local function findSendTradePrompt(ownerName)
     local plotName=plotOf(ownerName); if not plotName then return nil end
     local plot=workspace.Plots:FindFirstChild(plotName); if not plot then return nil end
@@ -168,9 +167,7 @@ local function watchNotification(timeout,cb)
         if child:IsA("TextLabel") then
             local txt=child.Text; if type(txt)~="string" then return end
             local clean=stripRich(txt)
-            if #clean>1 and clean~="NOTIFICATION TEMPLATE" then
-                fired=true; if conn then conn:Disconnect() end; cb(clean)
-            end
+            if #clean>1 and clean~="NOTIFICATION TEMPLATE" then fired=true; if conn then conn:Disconnect() end; cb(clean) end
         end
     end
     conn=notif.ChildAdded:Connect(function(c) task.wait(0.05); handle(c) end)
@@ -650,7 +647,7 @@ sendBtn.MouseButton1Click:Connect(function()
     end)
 end)
 
--- ========== AUTO-TRANSLATE (Slicedz fn30/fn31 port) ==========
+-- ========== AUTO-TRANSLATE ==========
 local transState={}
 local function getState(sf) local s=transState[sf]; if not s then s={n=0,votes={}}; transState[sf]=s end return s end
 local function isMsgF(o) return o:IsA("Frame") and o.Name:find("^Message")~=nil end
@@ -958,7 +955,7 @@ local function beamTo(owner)
     Toast("BEAM","tracking "..owner.."'s base",2); return true
 end
 
--- ========== BASE VIEWER (Slicedz 3D port) ==========
+-- ========== BASE VIEWER (3D, Slicedz) ==========
 local BasePanel, BaseMeta
 do
     local pg=LP:FindFirstChildOfClass("PlayerGui") or GuiRoot
@@ -1006,7 +1003,7 @@ do
     viewportFrame.Ambient=Color3.fromRGB(200,215,255); viewportFrame.LightColor=Color3.fromRGB(255,250,235)
     viewportFrame.LightDirection=Vector3.new(-0.3,-1,-0.4)
     local worldModel=Instance.new("WorldModel"); worldModel.Parent=viewportFrame
-    local camera=Instance.new("Camera",viewportFrame); viewportFrame.CurrentCamera=camera
+    local camera=Instance.new("Camera"); camera.FieldOfView=60; viewportFrame.CurrentCamera=camera; camera.Parent=viewportFrame
     local labelLayer=Instance.new("Frame",viewFrame); labelLayer.Size=UDim2.fromScale(1,1); labelLayer.BackgroundTransparency=1
     labelLayer.ZIndex=63; labelLayer.ClipsDescendants=true
     local floorLabel=Instance.new("TextLabel",viewFrame); floorLabel.Size=UDim2.fromOffset(150,34); floorLabel.Position=UDim2.fromOffset(34,14)
@@ -1090,6 +1087,7 @@ do
     local function buildFloor(floorNum)
         local oldWorld=state.currentWorld
         local newWorld=Instance.new("WorldModel")
+        newWorld.Parent=viewportFrame
         state.labels={}
         for _,ch in ipairs(labelLayer:GetChildren()) do if ch:IsA("Frame") then ch:Destroy() end end
         local list=state.animalList or {}
@@ -1172,7 +1170,6 @@ do
                 end
             end
         end
-        newWorld.Parent=viewportFrame
         if oldWorld then pcall(function() oldWorld:Destroy() end) end
         state.currentWorld=newWorld
         floorLabel.Text="FLOOR "..floorNum
@@ -1186,7 +1183,7 @@ do
         return Vector2.new((v.X/-v.Z/tan*ar*0.5+0.5)*as.X,(1-v.Y/-v.Z/tan*0.5+0.5)*as.Y),-v.Z
     end
     local labelObjs={}
-    local function rebuildLabels()
+    function rebuildLabels()
         for _,ch in ipairs(labelLayer:GetChildren()) do if ch:IsA("Frame") then ch:Destroy() end end
         labelObjs={}
         for _,l in ipairs(state.labels) do
@@ -1276,7 +1273,9 @@ do
 
     RunService.RenderStepped:Connect(function()
         if not (BasePanel and BasePanel.Visible and alive()) then return end
-        local as=viewFrame.AbsoluteSize; local camCF=camera.CFrame; local fov=camera.FieldOfView
+        local as=viewFrame.AbsoluteSize
+        if as.X<10 or as.Y<10 then return end
+        local camCF=camera.CFrame; local fov=camera.FieldOfView
         local us=BasePanel:FindFirstChildWhichIsA("UIScale"); local sc=1/((us and us.Scale) or 1)
         for _,o in ipairs(labelObjs) do
             local wp=o.world
@@ -1296,7 +1295,14 @@ do
 
     BaseMeta={state=state}
     BaseMeta.render=function(owner)
-        local plotName,t=plotOf(owner)
+        BasePanel.Visible=true
+        task.wait()
+        local plotName,t=nil,nil
+        for i=1,3 do
+            plotName,t=plotOf(owner)
+            if plotName then break end
+            task.wait(0.15)
+        end
         state.plotInst=plotName and workspace.Plots:FindFirstChild(plotName)
         state.animalList=(t and type(t.AnimalList)=="table") and t.AnimalList or {}
         bTitle.Text=owner and owner:upper() or "THEIR BASE"
@@ -1333,7 +1339,6 @@ do
         local idx=1; for i,v in ipairs(list) do if v==state.selected then idx=i; break end end
         local frac=#list<=1 and 0.84 or (idx==1 and 0.16 or idx==2 and 0.5 or 0.84)
         railKnob.Size=UDim2.new(1,0,frac,0)
-        BasePanel.Visible=true
     end
     BaseMeta.toggle=function(owner)
         if BasePanel.Visible and state.plotInst then
@@ -1344,7 +1349,7 @@ do
     end
 end
 
--- ========== HEADER INJECTION (SHOW BASE + FRIEND) ==========
+-- ========== HEADER INJECTION ==========
 local HeaderBtn={showBase=nil,friend=nil,friendConn=nil,current=nil}
 local function clearHeaderButtons()
     pcall(function() if HeaderBtn.friendConn then HeaderBtn.friendConn:Disconnect() end end)
