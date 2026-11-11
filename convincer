@@ -1,7 +1,8 @@
--- Guest Convincer v1.0 — hardened fork
+-- Guest Convincer v1.1 — hardened fork
 -- Removed: remote loadstring RCE stage, obfuscation decoder, Supabase translate endpoint,
 --          setthreadidentity elevation, load-time executor probing, leaked-discord strings.
--- Added:   trade-confirm gate, auto-hop confirm gate, config allowlist, midnight theme.
+-- Added:   trade-confirm gate, auto-hop confirm gate, config allowlist, midnight theme,
+--          trade-header SHOW BASE + FRIEND buttons (read-only base viewer, one-shot friend request).
 
 local function initOriginalFeature()
 
@@ -3770,25 +3771,90 @@ local function initializeRecoveredPanel()
 					if not tradeLiveTrade2 then return end
 					local header = tradeLiveTrade2:FindFirstChild("Header")
 					if not header then return end
+
 					local guestShowBase = header:FindFirstChild("GuestShowBase")
 					if guestShowBase then guestShowBase:Destroy() end
 					local guestFriend = header:FindFirstChild("GuestFriend")
 					if guestFriend then guestFriend:Destroy() end
-					local color = Color3.fromRGB(64, 120, 196)
-					local color2 = Color3.fromRGB(46, 92, 158)
-					local imageButton = Instance.new("ImageButton", header)
-					imageButton.Name = "GuestShowBase"
-					imageButton.AnchorPoint = Vector2.new(1, 0.5)
-					imageButton.Size = UDim2.new(0.155, 0, 0.62, 0)
-					imageButton.Position = UDim2.new(0.775, 0, 0.5, 0)
-					imageButton.ZIndex = (header.ZIndex or 1) + 5
-					fn29(imageButton, "SHOW BASE", color, color2)
-					imageButton.MouseButton1Click:Connect(function()
+
+					local baseColor, basePress = Color3.fromRGB(64, 120, 196), Color3.fromRGB(46, 92, 158)
+					local showBaseBtn = Instance.new("ImageButton", header)
+					showBaseBtn.Name = "GuestShowBase"
+					showBaseBtn.AnchorPoint = Vector2.new(1, 0.5)
+					showBaseBtn.Size = UDim2.new(0.155, 0, 0.62, 0)
+					showBaseBtn.Position = UDim2.new(0.775, 0, 0.5, 0)
+					showBaseBtn.ZIndex = (header.ZIndex or 1) + 5
+					fn29(showBaseBtn, "SHOW BASE", baseColor, basePress)
+
+					showBaseBtn.MouseButton1Click:Connect(function()
 						if not v73 then return end
-						if __deobf_slots5.v825_2.Visible then __deobf_slots5.v825_2.Visible = false
-						else fn28(v73) end
+						if __deobf_slots5.v825_2.Visible then
+							__deobf_slots5.v825_2.Visible = false
+						else
+							fn28(v73)
+						end
 					end)
-					__deobf_slots5.v825_1 = imageButton
+
+					__deobf_slots5.v825_1 = showBaseBtn
+
+					local partnerName = v73
+					local partnerPlayer = partnerName and __deobf_slots4.v441_2:FindFirstChild(partnerName)
+					if not partnerPlayer then return showBaseBtn end
+
+					local friendColor, friendPress = Color3.fromRGB(70, 170, 90), Color3.fromRGB(52, 130, 68)
+					local friendBtn = Instance.new("ImageButton", header)
+					friendBtn.Name = "GuestFriend"
+					friendBtn.AnchorPoint = Vector2.new(1, 0.5)
+					friendBtn.Size = UDim2.new(0.12, 0, 0.62, 0)
+					friendBtn.Position = UDim2.new(0.905, 0, 0.5, 0)
+					friendBtn.ZIndex = (header.ZIndex or 1) + 5
+					local friendLabel = fn29(friendBtn, "FRIEND", friendColor, friendPress)
+
+					local function reflectFriendStatus(status)
+						pcall(function()
+							if status == Enum.FriendStatus.Friend then
+								friendBtn.Visible = false
+							elseif status == Enum.FriendStatus.FriendRequestSent then
+								friendLabel.Text = "SENT"
+								friendBtn.BackgroundColor3 = Color3.fromRGB(120, 120, 120)
+								friendBtn.Visible = true
+							elseif status == Enum.FriendStatus.FriendRequestReceived then
+								friendLabel.Text = "ACCEPT"
+								friendBtn.BackgroundColor3 = friendColor
+								friendBtn.Visible = true
+							else
+								friendLabel.Text = "FRIEND"
+								friendBtn.BackgroundColor3 = friendColor
+								friendBtn.Visible = true
+							end
+						end)
+					end
+
+					local ok, status = pcall(function()
+						return __deobf_slots4.v441_8:GetFriendStatus(partnerPlayer)
+					end)
+					if ok then reflectFriendStatus(status) end
+
+					if connection then
+						pcall(function() connection:Disconnect() end)
+					end
+					connection = __deobf_slots4.v441_8.FriendStatusChanged:Connect(function(changedPlayer, newStatus)
+						if changedPlayer == partnerPlayer and friendBtn and friendBtn.Parent then
+							reflectFriendStatus(newStatus)
+						end
+					end)
+
+					friendBtn.MouseButton1Click:Connect(function()
+						local ok2, current = pcall(function()
+							return __deobf_slots4.v441_8:GetFriendStatus(partnerPlayer)
+						end)
+						if ok2 and current == Enum.FriendStatus.Friend then return end
+						pcall(function()
+							__deobf_slots4.v441_8:RequestFriendship(partnerPlayer)
+						end)
+					end)
+
+					return showBaseBtn
 				end
 			end
 
@@ -3849,7 +3915,7 @@ end
 
 local environment = type(getgenv) == "function" and getgenv() or _G
 local previousAddon = type(environment) == "table" and rawget(environment, "GuestConvincerV1")
-if type(previousAddon) == "table" and rawget(previousAddon, "Version") == "1.0.0" then
+if type(previousAddon) == "table" and rawget(previousAddon, "Version") == "1.1.0" then
     local destroy = rawget(previousAddon, "Destroy")
     if type(destroy) == "function" then
         pcall(destroy)
