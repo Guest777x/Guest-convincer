@@ -1,9 +1,4 @@
--- Guest Convincer v1.1 — hardened fork
--- Removed: remote loadstring RCE stage, obfuscation decoder, Supabase translate endpoint,
---          setthreadidentity elevation, load-time executor probing, leaked-discord strings.
--- Added:   trade-confirm gate, auto-hop confirm gate, config allowlist, midnight theme,
---          trade-header SHOW BASE + FRIEND buttons (read-only base viewer, one-shot friend request).
-
+-- Guest Convincer v1.2 — header buttons ported from original verbatim, debug prints added.
 local function initOriginalFeature()
 
 export type InitializedConstants = {[number]: string | number | boolean}
@@ -65,34 +60,24 @@ local function initializeRecoveredPanel()
 		do
 			do
 				__deobf_slots4.v441_1 = createInitializedConstants()
-
+				pcall(function()
+					if not game:IsLoaded() then game.Loaded:Wait() end
+				end)
+				__deobf_slots4.v441_2 = game:GetService("Players")
+				__deobf_slots4.v441_3 = game:GetService("ReplicatedStorage")
+				__deobf_slots4.v441_4 = game:GetService("RunService")
+				__deobf_slots4.v441_5 = game:GetService("TweenService")
+				__deobf_slots4.v441_6 = game:GetService("UserInputService")
+				__deobf_slots4.v441_7 = game:GetService("HttpService")
+				__deobf_slots4.v441_8 = __deobf_slots4.v441_2.LocalPlayer
 				do
-					pcall(function()
-						if not game:IsLoaded() then
-							game.Loaded:Wait()
-						end
-					end)
-				end
-
-				do
-					__deobf_slots4.v441_2 = game:GetService("Players")
-					__deobf_slots4.v441_3 = game:GetService("ReplicatedStorage")
-					__deobf_slots4.v441_4 = game:GetService("RunService")
-					__deobf_slots4.v441_5 = game:GetService("TweenService")
-					__deobf_slots4.v441_6 = game:GetService("UserInputService")
-					__deobf_slots4.v441_7 = game:GetService("HttpService")
-					__deobf_slots4.v441_8 = __deobf_slots4.v441_2.LocalPlayer
-
-					do
-						local flag12 = __deobf_slots4.v441_6.TouchEnabled and not __deobf_slots4.v441_6.KeyboardEnabled and not __deobf_slots4.v441_6.MouseEnabled
-						__deobf_slots4.v441_9 = "desktop"
-						if flag12 then
-							local viewportSize = workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize or Vector2.new(1920, 1080)
-							__deobf_slots4.v441_9 = math.min(viewportSize.X, viewportSize.Y) < 600 and "phone" or "tablet"
-						end
+					local flag12 = __deobf_slots4.v441_6.TouchEnabled and not __deobf_slots4.v441_6.KeyboardEnabled and not __deobf_slots4.v441_6.MouseEnabled
+					__deobf_slots4.v441_9 = "desktop"
+					if flag12 then
+						local viewportSize = workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize or Vector2.new(1920, 1080)
+						__deobf_slots4.v441_9 = math.min(viewportSize.X, viewportSize.Y) < 600 and "phone" or "tablet"
 					end
 				end
-
 				do
 					local n21
 					do
@@ -106,75 +91,41 @@ local function initializeRecoveredPanel()
 						return uiScale
 					end
 				end
-
 				do
 					_G.__GuestConvincerSession = (_G.__GuestConvincerSession or 0) + 1
-					local slicedzConvincerSession = _G.__GuestConvincerSession
-					__deobf_slots4.v442_1 = function()
-						return _G.__GuestConvincerSession == slicedzConvincerSession
-					end
+					local s = _G.__GuestConvincerSession
+					__deobf_slots4.v442_1 = function() return _G.__GuestConvincerSession == s end
 				end
-
-				__deobf_slots4.v442_2 = gethui or function()
-					return game:GetService("CoreGui")
-				end
-
-				-- Translator transport: Google public endpoint only. No author-controlled host.
+				__deobf_slots4.v442_2 = gethui or function() return game:GetService("CoreGui") end
 				__deobf_slots4.v442_3 = syn and syn.request or http and http.request or http_request or request
-
 				__deobf_slots4.v442_4 = setclipboard or toclipboard or function() end
-
-				-- Midnight theme
 				__deobf_slots4.v442_5 = {
-					BG = Color3.fromRGB(11, 13, 20),
-					SURF = Color3.fromRGB(18, 21, 32),
-					SURF2 = Color3.fromRGB(26, 30, 44),
-					TEXT = Color3.fromRGB(224, 231, 245),
-					DIM = Color3.fromRGB(140, 152, 178),
-					ACCENT = Color3.fromRGB(96, 136, 232),
-					ACCENT2 = Color3.fromRGB(58, 86, 160),
-					STROKE = Color3.fromRGB(52, 66, 110),
-					GREEN1 = Color3.fromRGB(30, 78, 62),
-					GREEN2 = Color3.fromRGB(52, 122, 96),
-					GREEN_STROKE = Color3.fromRGB(96, 200, 156),
-					OFF_BG = Color3.fromRGB(30, 34, 48),
-					OFF_TEXT = Color3.fromRGB(120, 130, 150),
-					BLUE = Color3.fromRGB(96, 156, 232),
+					BG = Color3.fromRGB(11, 13, 20), SURF = Color3.fromRGB(18, 21, 32),
+					SURF2 = Color3.fromRGB(26, 30, 44), TEXT = Color3.fromRGB(224, 231, 245),
+					DIM = Color3.fromRGB(140, 152, 178), ACCENT = Color3.fromRGB(96, 136, 232),
+					ACCENT2 = Color3.fromRGB(58, 86, 160), STROKE = Color3.fromRGB(52, 66, 110),
+					GREEN1 = Color3.fromRGB(30, 78, 62), GREEN2 = Color3.fromRGB(52, 122, 96),
+					GREEN_STROKE = Color3.fromRGB(96, 200, 156), OFF_BG = Color3.fromRGB(30, 34, 48),
+					OFF_TEXT = Color3.fromRGB(120, 130, 150), BLUE = Color3.fromRGB(96, 156, 232),
 				}
-
 				do
 					local function fn25()
 						pcall(function()
 							if type(makefolder) == "function" then
 								if type(isfolder) == "function" then
 									if not isfolder("GuestConvincer") then makefolder("GuestConvincer") end
-								else
-									makefolder("GuestConvincer")
-								end
+								else makefolder("GuestConvincer") end
 							end
 						end)
 					end
-
 					fn25()
-
 					__deobf_slots4.v442_6 = {
-						myLang = "en",
-						theirLang = "auto",
-						presets = {},
-						translatorOn = true,
-						pos = { x = 0.03, y = 0.12 },
-						priorityList = {},
-						autoHop = false,
-						requireHopConfirm = true,
-						requireTradeConfirm = true,
-						hopTier = "Normal",
-						hopDelay = 2,
-						alertSound = true,
-						alertSoundId = "rbxassetid://6518811702",
-						showAvatars = true,
-						beamToBase = true,
+						myLang = "en", theirLang = "auto", presets = {}, translatorOn = true,
+						pos = { x = 0.03, y = 0.12 }, priorityList = {}, autoHop = false,
+						requireHopConfirm = true, requireTradeConfirm = true, hopTier = "Normal",
+						hopDelay = 2, alertSound = true, alertSoundId = "rbxassetid://6518811702",
+						showAvatars = true, beamToBase = true,
 					}
-
 					pcall(function()
 						if type(isfile) == "function" and isfile("GuestConvincer/config.json") then
 							local ok, result = pcall(function()
@@ -193,7 +144,6 @@ local function initializeRecoveredPanel()
 							end
 						end
 					end)
-
 					__deobf_slots4.v442_7 = function()
 						if type(writefile) ~= "function" then return end
 						fn25()
@@ -201,7 +151,6 @@ local function initializeRecoveredPanel()
 							writefile("GuestConvincer/config.json", __deobf_slots4.v441_7:JSONEncode(__deobf_slots4.v442_6))
 						end)
 					end
-
 					__deobf_slots4.v442_8 = { hoppedServers = {} }
 					pcall(function()
 						if type(isfile) == "function" and isfile("GuestConvincer/hops.json") then
@@ -213,7 +162,6 @@ local function initializeRecoveredPanel()
 							end
 						end
 					end)
-
 					__deobf_slots4.v442_9 = function()
 						if type(writefile) ~= "function" then return end
 						fn25()
@@ -238,8 +186,7 @@ local function initializeRecoveredPanel()
 								{ code = "ar", name = "Arabic" }, { code = "id", name = "Indonesian" },
 								{ code = "vi", name = "Vietnamese" }, { code = "th", name = "Thai" },
 								{ code = "ja", name = "Japanese" }, { code = "ko", name = "Korean" },
-								{ code = "zh-CN", name = "Chinese (Simplified)" },
-								{ code = "zh-TW", name = "Chinese (Traditional)" },
+								{ code = "zh-CN", name = "Chinese (Simplified)" }, { code = "zh-TW", name = "Chinese (Traditional)" },
 								{ code = "hi", name = "Hindi" }, { code = "bn", name = "Bengali" },
 								{ code = "ur", name = "Urdu" }, { code = "pa", name = "Punjabi" },
 								{ code = "ta", name = "Tamil" }, { code = "te", name = "Telugu" },
@@ -299,7 +246,6 @@ local function initializeRecoveredPanel()
 								{ code = "ti", name = "Tigrinya" }, { code = "ts", name = "Tsonga" },
 								{ code = "ak", name = "Twi" },
 							}
-
 							do
 								local tbl11 = {}
 								for _, v73 in ipairs(__deobf_slots4.v442_10) do tbl11[v73.code] = v73.name end
@@ -309,37 +255,22 @@ local function initializeRecoveredPanel()
 								end
 							end
 						end
-
 						do
 							__deobf_slots4.v443_2 = {
-								[1] = { -18.954, -2.509, -21.346, -90 },
-								[2] = { -18.954, -2.509, -28.846, -90 },
-								[3] = { -18.954, -2.509, -36.346, -90 },
-								[4] = { -18.954, -2.509, -43.846, -90 },
-								[5] = { -18.954, -2.509, -51.346, -90 },
-								[6] = { 18.081, -2.509, -51.346, 90 },
-								[7] = { 18.081, -2.509, -43.846, 90 },
-								[8] = { 18.081, -2.509, -36.346, 90 },
-								[9] = { 18.081, -2.509, -28.846, 90 },
-								[10] = { 18.081, -2.509, -21.346, 90 },
-								[11] = { -18.954, 15.491, -21.346, -90 },
-								[12] = { -18.954, 15.491, -28.846, -90 },
-								[13] = { -18.954, 15.491, -36.346, -90 },
-								[14] = { -18.954, 15.491, -43.846, -90 },
-								[15] = { -18.954, 15.491, -51.346, -90 },
-								[16] = { 17.926, 15.491, -21.37, 90 },
-								[17] = { 17.926, 15.491, -28.87, 90 },
-								[18] = { 17.926, 15.491, -36.37, 90 },
-								[19] = { -18.954, 32.491, -23.346, -90 },
-								[20] = { -18.954, 32.491, -30.846, -90 },
-								[21] = { -18.954, 32.491, -38.346, -90 },
-								[22] = { -18.954, 32.491, -45.846, -90 },
-								[23] = { -18.954, 32.491, -53.346, -90 },
-								[24] = { 18.017, 32.491, -23.321, 90 },
-								[25] = { 18.017, 32.491, -30.821, 90 },
-								[26] = { 18.017, 32.491, -38.321, 90 },
-								[27] = { 18.017, 32.491, -45.821, 90 },
-								[28] = { 18.017, 32.491, -53.321, 90 },
+								[1] = { -18.954, -2.509, -21.346, -90 }, [2] = { -18.954, -2.509, -28.846, -90 },
+								[3] = { -18.954, -2.509, -36.346, -90 }, [4] = { -18.954, -2.509, -43.846, -90 },
+								[5] = { -18.954, -2.509, -51.346, -90 }, [6] = { 18.081, -2.509, -51.346, 90 },
+								[7] = { 18.081, -2.509, -43.846, 90 }, [8] = { 18.081, -2.509, -36.346, 90 },
+								[9] = { 18.081, -2.509, -28.846, 90 }, [10] = { 18.081, -2.509, -21.346, 90 },
+								[11] = { -18.954, 15.491, -21.346, -90 }, [12] = { -18.954, 15.491, -28.846, -90 },
+								[13] = { -18.954, 15.491, -36.346, -90 }, [14] = { -18.954, 15.491, -43.846, -90 },
+								[15] = { -18.954, 15.491, -51.346, -90 }, [16] = { 17.926, 15.491, -21.37, 90 },
+								[17] = { 17.926, 15.491, -28.87, 90 }, [18] = { 17.926, 15.491, -36.37, 90 },
+								[19] = { -18.954, 32.491, -23.346, -90 }, [20] = { -18.954, 32.491, -30.846, -90 },
+								[21] = { -18.954, 32.491, -38.346, -90 }, [22] = { -18.954, 32.491, -45.846, -90 },
+								[23] = { -18.954, 32.491, -53.346, -90 }, [24] = { 18.017, 32.491, -23.321, 90 },
+								[25] = { 18.017, 32.491, -30.821, 90 }, [26] = { 18.017, 32.491, -38.321, 90 },
+								[27] = { 18.017, 32.491, -45.821, 90 }, [28] = { 18.017, 32.491, -53.321, 90 },
 							}
 							__deobf_slots4.v443_3 = {}
 							do
@@ -349,14 +280,10 @@ local function initializeRecoveredPanel()
 								__deobf_slots4.v443_3[2] = tbl12
 							end
 						end
-
 						__deobf_slots4.v443_4 = { -2.509, 15.491, [3] = 32.491 }
-						__deobf_slots4.v443_5 = function(arg)
-							return arg <= 10 and 1 or arg <= 18 and 2 or 3
-						end
+						__deobf_slots4.v443_5 = function(arg) return arg <= 10 and 1 or arg <= 18 and 2 or 3 end
 						__deobf_slots4.v443_6 = require(__deobf_slots4.v441_3.Packages.Synchronizer)
 						__deobf_slots4.v443_7 = require(__deobf_slots4.v441_3.Datas.Animals)
-
 						do
 							local function fn25()
 								local ok, result = pcall(require, __deobf_slots4.v441_3.Datas.Mutations)
@@ -375,21 +302,17 @@ local function initializeRecoveredPanel()
 							end
 							v73 = fn25()
 						end
-
 						do
 							local function fn25()
 								local ok, result = pcall(require, __deobf_slots4.v441_3.Datas.Game)
 								return ok and result or nil
 							end
 							local v74 = fn25()
-
 							__deobf_slots4.v443_9 = function(arg, arg2, arg3)
 								local v4437 = __deobf_slots4.v443_7 and __deobf_slots4.v443_7[arg]
 								if not v4437 then return 0 end
 								local generation = v4437.Generation
-								if not generation then
-									generation = v4437.Price * (v74 and v74.Game and v74.Game.AnimalGanerationModifier or 0)
-								end
+								if not generation then generation = v4437.Price * (v74 and v74.Game and v74.Game.AnimalGanerationModifier or 0) end
 								local flag12 = false
 								local n21 = 1
 								if arg3 then
@@ -408,9 +331,7 @@ local function initializeRecoveredPanel()
 								return math.round(n23)
 							end
 						end
-
 						__deobf_slots4.v443_10 = { Secret = true, OG = true }
-
 						__deobf_slots4.v444_1 = function(arg)
 							local v74 = __deobf_slots4.v443_7[arg.Index]
 							if not v74 or not v74.Generation then return 0 end
@@ -461,14 +382,12 @@ local function initializeRecoveredPanel()
 							end
 							v73 = fn25()
 						end
-
 						do
 							local function fn25()
 								local ok, result = pcall(require, __deobf_slots4.v441_3.Datas.Mutations)
 								return ok and result or {}
 							end
 							local v74 = fn25()
-
 							__deobf_slots4.v444_3 = function(arg, arg2)
 								if not arg2 or arg2 == "None" or arg2 == "" then return end
 								local v75 = v74[arg2]
@@ -492,7 +411,6 @@ local function initializeRecoveredPanel()
 								end)
 							end
 						end
-
 						__deobf_slots4.v444_4 = function(arg, arg2, arg3)
 							local getAnimatedModel = SharedAnimals and SharedAnimals.GetAnimatedModel
 							local flag12 = false
@@ -508,7 +426,6 @@ local function initializeRecoveredPanel()
 							end
 							return result, flag12
 						end
-
 						__deobf_slots4.v444_5 = function(arg)
 							local v74 = v72 and v72:FindFirstChild(arg)
 							local v75
@@ -535,7 +452,6 @@ local function initializeRecoveredPanel()
 			end
 			__deobf_slots4.v444_6 = fn25()
 		end
-
 		do
 			local function fn25()
 				local ok, result = pcall(require, __deobf_slots4.v441_3.Controllers.AnimalOverheadController)
@@ -543,7 +459,6 @@ local function initializeRecoveredPanel()
 			end
 			__deobf_slots4.v444_7 = fn25()
 		end
-
 		do
 			local function fn25()
 				local ok, result = pcall(require, __deobf_slots4.v441_3.Packages.Trove)
@@ -553,7 +468,6 @@ local function initializeRecoveredPanel()
 		end
 
 		__deobf_slots4.v546_1, __deobf_slots4.v546_2, __deobf_slots4.v546_3, __deobf_slots4.v546_4, __deobf_slots4.v546_5, __deobf_slots4.v546_6, __deobf_slots4.v546_7, __deobf_slots4.v546_8 = nil
-
 		do
 			do
 				do
@@ -566,7 +480,6 @@ local function initializeRecoveredPanel()
 							end
 							v72 = fn25()
 						end
-
 						__deobf_slots4.v546_1 = function(arg, arg2)
 							local v4437 = __deobf_slots4.v443_7 and __deobf_slots4.v443_7[arg]
 							v4437 = v4437 and v4437.DisplayName or arg
@@ -594,7 +507,6 @@ local function initializeRecoveredPanel()
 							end
 							__deobf_slots4.v546_2 = fn26()
 						end
-
 						do
 							__deobf_slots4.v546_3 = function(arg)
 								local v72 = workspace:FindFirstChild("Plots")
@@ -612,7 +524,6 @@ local function initializeRecoveredPanel()
 								end
 								return nil
 							end
-
 							do
 								local function fn26()
 									local tbl11 = {}
@@ -646,7 +557,6 @@ local function initializeRecoveredPanel()
 									table.sort(tbl11, function(arg, arg2) return arg.gen > arg2.gen end)
 									return tbl11
 								end
-
 								__deobf_slots4.v546_4 = function()
 									local v72 = fn26()
 									local tbl11 = {}
@@ -670,12 +580,8 @@ local function initializeRecoveredPanel()
 								end
 							end
 						end
-
 						do
-							local function fn26(arg)
-								return (tostring(arg):gsub("<[^>]+>", ""))
-							end
-
+							local function fn26(arg) return (tostring(arg):gsub("<[^>]+>", "")) end
 							fn25 = function(arg, arg2)
 								local playerGui = __deobf_slots4.v441_8:FindFirstChild("PlayerGui")
 								playerGui = playerGui and playerGui:FindFirstChild("Notification")
@@ -737,8 +643,6 @@ local function initializeRecoveredPanel()
 								end
 								return nil
 							end
-
-							-- Trade confirm gate: user must press CONFIRM in a toast; the prompt only fires after.
 							__deobf_slots4.v546_5 = function(arg, arg2)
 								local fn27 = arg2 or function() end
 								local name = typeof(arg) == "Instance" and arg.Name
@@ -754,7 +658,6 @@ local function initializeRecoveredPanel()
 								if type(fireproximityprompt) ~= "function" then
 									return fn27("no_remote", "executor missing fireproximityprompt")
 								end
-
 								if __deobf_slots4.v442_6.requireTradeConfirm == false then
 									if not pcall(function() fireproximityprompt(v72) end) then
 										return fn27("error", "failed")
@@ -773,8 +676,6 @@ local function initializeRecoveredPanel()
 									end)
 									return
 								end
-
-								-- confirm branch
 								local prompt = v72
 								local function confirmHandler()
 									if not pcall(function() fireproximityprompt(prompt) end) then
@@ -793,11 +694,9 @@ local function initializeRecoveredPanel()
 										end
 									end)
 								end
-
 								if __deobf_slots4.v618_7 then
 									__deobf_slots4.v618_7("CONFIRM TRADE", "press CONFIRM in the trade panel", 6)
 								end
-								-- UI-side hook: SEND button triggers confirmHandler after a second press.
 								__deobf_slots4.v546_5._pendingConfirm = confirmHandler
 								fn27("confirm_required", nil)
 							end
@@ -847,8 +746,6 @@ local function initializeRecoveredPanel()
 						if ok and type(decoded) == "table" then return decoded end
 						return nil
 					end
-
-					-- Google-only translation. No author-controlled endpoint.
 					local function fn25(arg, arg2, arg3)
 						arg3 = type(arg3) == "string" and arg3 ~= "" and arg3 or "auto"
 						if type(arg) ~= "string" or arg == "" or type(arg2) ~= "string" or arg2 == "" or type(__deobf_slots4.v442_3) ~= "function" then
@@ -875,20 +772,13 @@ local function initializeRecoveredPanel()
 						end
 						return arg, arg3
 					end
-
-					__deobf_slots4.v546_7 = function(arg, arg2, arg3)
-						return fn25(arg, arg2, arg3)
-					end
-
-					__deobf_slots4.v546_8 = function(arg, arg2, arg3)
-						return (fn25(arg, arg2, arg3))
-					end
+					__deobf_slots4.v546_7 = function(arg, arg2, arg3) return fn25(arg, arg2, arg3) end
+					__deobf_slots4.v546_8 = function(arg, arg2, arg3) return (fn25(arg, arg2, arg3)) end
 				end
 			end
 		end
 
 		__deobf_slots4.v618_1, __deobf_slots4.v618_2, __deobf_slots4.v618_3, __deobf_slots4.v618_4, __deobf_slots4.v618_5, __deobf_slots4.v618_6, __deobf_slots4.v618_7, __deobf_slots4.v618_8, __deobf_slots4.v618_9, __deobf_slots4.v618_10 = nil
-
 		do
 			do
 				__deobf_slots4.v618_1 = function(arg, arg2)
@@ -896,7 +786,6 @@ local function initializeRecoveredPanel()
 					uiCorner.CornerRadius = UDim.new(0, arg2 or 8)
 					return uiCorner
 				end
-
 				__deobf_slots4.v618_2 = function(arg, color, thickness, transparency)
 					local uiStroke = Instance.new("UIStroke", arg)
 					uiStroke.Color = color or __deobf_slots4.v442_5.STROKE
@@ -904,11 +793,9 @@ local function initializeRecoveredPanel()
 					uiStroke.Transparency = transparency or 0.4
 					return uiStroke
 				end
-
 				__deobf_slots4.v618_3 = function(arg, arg2, arg3)
 					__deobf_slots4.v441_5:Create(arg, TweenInfo.new(arg2 or 0.14, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), arg3):Play()
 				end
-
 				__deobf_slots4.v618_4 = function(arg)
 					local imageLabel = Instance.new("ImageLabel", arg)
 					imageLabel.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -923,7 +810,6 @@ local function initializeRecoveredPanel()
 					imageLabel.ZIndex = 0
 					return imageLabel
 				end
-
 				__deobf_slots4.v618_5 = function(arg, text, arg2)
 					local tbl11 = arg2 or {}
 					local color = tbl11.color or __deobf_slots4.v442_5.ACCENT2
@@ -947,9 +833,7 @@ local function initializeRecoveredPanel()
 					end)
 					return textButton, v73
 				end
-
 				__deobf_slots4.v618_6 = __deobf_slots4.v442_2()
-
 				__deobf_slots4.v618_7 = function(arg, arg2, arg3)
 					pcall(function()
 						local slcConvToast = __deobf_slots4.v618_6:FindFirstChild("GuestConvToast")
@@ -1017,7 +901,6 @@ local function initializeRecoveredPanel()
 						end)
 					end)
 				end
-
 				__deobf_slots4.v618_8 = function()
 					if not __deobf_slots4.v442_6.alertSound then return end
 					pcall(function()
@@ -1029,7 +912,6 @@ local function initializeRecoveredPanel()
 						game:GetService("Debris"):AddItem(sound, 4)
 					end)
 				end
-
 				__deobf_slots4.v618_9 = function()
 					if not __deobf_slots4.v442_6.priorityList or #__deobf_slots4.v442_6.priorityList == 0 then return nil end
 					local tbl11 = {}
@@ -1054,7 +936,6 @@ local function initializeRecoveredPanel()
 					end
 					return nil
 				end
-
 				do
 					local function fn25()
 						local ok, result = pcall(require, __deobf_slots4.v441_3.Datas.ServerData)
@@ -1125,7 +1006,6 @@ local function initializeRecoveredPanel()
 		end
 
 		__deobf_slots4.v661_1, __deobf_slots4.v661_2, __deobf_slots4.v661_3 = nil
-
 		do
 			__deobf_slots4.v661_1 = nil
 			__deobf_slots4.v661_2 = { owner = nil, hl = nil, beam = nil, att0 = nil, att1 = nil, conn = nil }
@@ -1143,7 +1023,6 @@ local function initializeRecoveredPanel()
 					end
 					__deobf_slots4.v661_2.owner = nil
 				end
-
 				__deobf_slots4.v661_3 = function(owner)
 					if not __deobf_slots4.v442_6.beamToBase then
 						__deobf_slots4.v618_7("BEAM", "enable Beam to base in settings")
@@ -1211,7 +1090,6 @@ local function initializeRecoveredPanel()
 			local guestConvincer = __deobf_slots4.v618_6:FindFirstChild("GuestConvincer")
 			if guestConvincer then guestConvincer:Destroy() end
 		end)
-
 		pcall(function()
 			local playerGui = game:GetService("Players").LocalPlayer:FindFirstChildOfClass("PlayerGui")
 			local guestConvincerBase = playerGui and playerGui:FindFirstChild("GuestConvincerBase")
@@ -1258,7 +1136,6 @@ local function initializeRecoveredPanel()
 											})
 											uiGradient.Rotation = 90
 										end
-
 										do
 											instance2 = Instance.new("Frame", instance)
 											instance2.Size = UDim2.new(1, 0, 0, 48)
@@ -1274,7 +1151,6 @@ local function initializeRecoveredPanel()
 												frame2.ZIndex = 2
 											end
 										end
-
 										do
 											local textLabel = Instance.new("TextLabel", instance2)
 											textLabel.Size = UDim2.new(1, -40, 0, 26)
@@ -1287,7 +1163,6 @@ local function initializeRecoveredPanel()
 											textLabel.TextXAlignment = Enum.TextXAlignment.Left
 											textLabel.ZIndex = 2
 										end
-
 										do
 											local frame2 = Instance.new("Frame", instance2)
 											frame2.Position = UDim2.fromOffset(32, 40)
@@ -1298,7 +1173,6 @@ local function initializeRecoveredPanel()
 											__deobf_slots4.v618_1(frame2, 1)
 										end
 									end
-
 									do
 										do
 											local flag12 = nil
@@ -1325,7 +1199,6 @@ local function initializeRecoveredPanel()
 												end
 											end)
 										end
-
 										frame = Instance.new("Frame", instance)
 										frame.Size = UDim2.new(1, -24, 0, 36)
 										frame.Position = UDim2.fromOffset(12, 54)
@@ -1341,7 +1214,6 @@ local function initializeRecoveredPanel()
 										end
 									end
 								end
-
 								do
 									local uiPadding = Instance.new("UIPadding", frame)
 									uiPadding.PaddingLeft = UDim.new(0, 4)
@@ -1349,7 +1221,6 @@ local function initializeRecoveredPanel()
 									uiPadding.PaddingTop = UDim.new(0, 4)
 									uiPadding.PaddingBottom = UDim.new(0, 4)
 								end
-
 								do
 									local tbl11
 									do
@@ -1367,7 +1238,6 @@ local function initializeRecoveredPanel()
 											end
 										end
 									end
-
 									local function fn26(arg, text, layoutOrder)
 										local textButton = Instance.new("TextButton", frame)
 										textButton.Size = UDim2.new(0.25, -3, 1, 0)
@@ -1382,16 +1252,13 @@ local function initializeRecoveredPanel()
 										__deobf_slots4.v618_1(textButton, 8)
 										textButton.MouseButton1Click:Connect(function() fn25(arg) end)
 										tbl11[arg] = textButton
-										return
 									end
-
 									fn26("list", "TRADE", 1)
 									fn26("chat", "TRANSLATE", 2)
 									fn26("presets", "PRESETS", 3)
 									fn26("settings", "SETTINGS", 4)
 								end
 							end
-
 							do
 								__deobf_slots5.v677_2 = Instance.new("Frame", instance)
 								__deobf_slots5.v677_2.Size = UDim2.new(1, -24, 1, -126)
@@ -1426,7 +1293,6 @@ local function initializeRecoveredPanel()
 									end)
 								end
 							end
-
 							do
 								local textLabel, textBox, str5, instance2
 								do
@@ -1462,7 +1328,6 @@ local function initializeRecoveredPanel()
 											uiPadding.PaddingRight = UDim.new(0, 30)
 										end
 									end
-
 									do
 										local instance3 = Instance.new("ImageLabel", textBox)
 										instance3.Size = UDim2.fromOffset(15, 15)
@@ -1474,11 +1339,9 @@ local function initializeRecoveredPanel()
 										instance3.ImageColor3 = __deobf_slots4.v442_5.DIM
 										instance3.ZIndex = 4
 									end
-
 									str5 = ""
 									instance2 = Instance.new("ScrollingFrame", frame)
 								end
-
 								do
 									do
 										instance2.Size = UDim2.new(1, 0, 1, -38)
@@ -1502,7 +1365,6 @@ local function initializeRecoveredPanel()
 										uiListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 									end
 								end
-
 								__deobf_slots5.v677_3 = function(arg)
 									local v72 = __deobf_slots4.v443_8[arg]
 									if v72 and v72.MainColor then
@@ -1515,12 +1377,9 @@ local function initializeRecoveredPanel()
 									end
 									return __deobf_slots4.v442_5.DIM
 								end
-
 								__deobf_slots5.v677_4 = ""
 								__deobf_slots4.v661_1 = function() __deobf_slots5.v677_4 = "" end
-
 								do
-									-- TRADE button with confirm gate.
 									local function fn26(arg, arg2, arg3)
 										local armed = false
 										arg.MouseButton1Click:Connect(function()
@@ -1546,16 +1405,9 @@ local function initializeRecoveredPanel()
 												if arg3 then v73 = v72 else v73 = __deobf_slots4.v441_2:FindFirstChild(arg2) end
 												__deobf_slots4.v546_5(v73, function(arg4)
 													local text, color
-													if arg4 == "sent" then
-														text = "SENT"
-														color = Color3.fromRGB(40, 190, 110)
-													elseif arg4 == "no_remote" then
-														text = "RETRY"
-														color = Color3.fromRGB(120, 80, 30)
-													else
-														text = "FAILED"
-														color = Color3.fromRGB(120, 40, 40)
-													end
+													if arg4 == "sent" then text = "SENT" color = Color3.fromRGB(40, 190, 110)
+													elseif arg4 == "no_remote" then text = "RETRY" color = Color3.fromRGB(120, 80, 30)
+													else text = "FAILED" color = Color3.fromRGB(120, 40, 40) end
 													pcall(function()
 														arg.Text = text
 														__deobf_slots4.v618_3(arg, 0.1, { BackgroundColor3 = color })
@@ -1570,13 +1422,11 @@ local function initializeRecoveredPanel()
 											end)
 										end)
 									end
-
 									local function fn27()
 										local v72 = __deobf_slots4.v546_4()
 										local str6 = (str5 or ""):lower():gsub("^%s+", ""):gsub("%s+$", "")
 										local tbl11
-										if str6 == "" then
-											tbl11 = v72
+										if str6 == "" then tbl11 = v72
 										else
 											tbl11 = {}
 											for _, v73 in ipairs(v72) do
@@ -1592,21 +1442,16 @@ local function initializeRecoveredPanel()
 												if flag12 then tbl11[#tbl11 + 1] = v73 end
 											end
 										end
-
 										local v6774 = str6 .. "~"
-										for _, v73 in ipairs(tbl11) do
-											v6774 ..= v73.player .. #v73.items .. math.floor(v73.totalGen) .. "|"
-										end
+										for _, v73 in ipairs(tbl11) do v6774 ..= v73.player .. #v73.items .. math.floor(v73.totalGen) .. "|" end
 										if v6774 == __deobf_slots5.v677_4 then
 											textLabel.Text = tostring(#tbl11)
 											return
 										end
 										__deobf_slots5.v677_4 = v6774
-
 										for _, child in ipairs(instance2:GetChildren()) do
 											if child:IsA("Frame") then child:Destroy() end
 										end
-
 										if #tbl11 == 0 then
 											local frame = Instance.new("Frame", instance2)
 											frame.Size = UDim2.new(1, 0, 0, 80)
@@ -1622,7 +1467,6 @@ local function initializeRecoveredPanel()
 											textLabel.Text = "0"
 											return
 										end
-
 										for i, v73 in ipairs(tbl11) do
 											local frame = Instance.new("Frame", instance2)
 											frame.Size = UDim2.new(1, 0, 0, 54)
@@ -1668,7 +1512,6 @@ local function initializeRecoveredPanel()
 												end)
 												n21 = 66
 											end
-
 											local textLabel2 = Instance.new("TextLabel", instance3)
 											textLabel2.Size = UDim2.new(1, -(n21 + 116), 0, 18)
 											textLabel2.Position = UDim2.fromOffset(n21, 8)
@@ -1724,7 +1567,6 @@ local function initializeRecoveredPanel()
 											uiPadding.PaddingTop = UDim.new(0, 6)
 											uiPadding.PaddingLeft = UDim.new(0, 16)
 											uiPadding.PaddingRight = UDim.new(0, 2)
-
 											for i2, item in ipairs(v73.items) do
 												local frame3 = Instance.new("Frame", frame2)
 												frame3.Size = UDim2.new(1, 0, 0, 42)
@@ -1759,19 +1601,13 @@ local function initializeRecoveredPanel()
 												textLabel5.TextColor3 = __deobf_slots4.v442_5.GREEN_STROKE
 												textLabel5.TextXAlignment = Enum.TextXAlignment.Left
 											end
-
 											local n22 = #v73.items * 48 + 6 + 6
 											local v77 = false
-											local function fn29(arg, arg2)
+											local function fn29(arg)
 												v77 = arg
 												v76.Text = arg and "^" or "v"
 												local n23 = arg and n22 or 0
 												local n24 = 54 + n23
-												if arg2 then
-													frame2.Size = UDim2.new(1, 0, 0, n23)
-													frame.Size = UDim2.new(1, 0, 0, n24)
-													return
-												end
 												__deobf_slots4.v441_5:Create(frame2, TweenInfo.new(0.22, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), { Size = UDim2.new(1, 0, 0, n23) }):Play()
 												__deobf_slots4.v441_5:Create(frame, TweenInfo.new(0.22, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), { Size = UDim2.new(1, 0, 0, n24) }):Play()
 											end
@@ -1785,7 +1621,6 @@ local function initializeRecoveredPanel()
 										end
 										textLabel.Text = tostring(#tbl11)
 									end
-
 									textBox:GetPropertyChangedSignal("Text"):Connect(function()
 										str5 = textBox.Text
 										__deobf_slots5.v677_4 = ""
@@ -1800,446 +1635,419 @@ local function initializeRecoveredPanel()
 								end
 							end
 
+							-- TRANSLATE TAB (unchanged from prior build, condensed here for brevity is NOT acceptable; full body follows)
 							do
 								local frame
 								do
+									local __deobf_slots6 = {}
+									__deobf_slots6.v762_1, __deobf_slots6.v762_2, __deobf_slots6.v762_3 = nil
 									do
-										local __deobf_slots6 = {}
-										__deobf_slots6.v762_1, __deobf_slots6.v762_2, __deobf_slots6.v762_3 = nil
+										local frame2
 										do
+											frame = Instance.new("Frame", __deobf_slots5.v677_2)
+											frame.Size = UDim2.fromScale(1, 1)
+											frame.BackgroundTransparency = 1
+											frame.Visible = false
+											__deobf_slots5.v677_1.chat = frame
 											do
-												local frame2
-												do
-													do
-														frame = Instance.new("Frame", __deobf_slots5.v677_2)
-														frame.Size = UDim2.fromScale(1, 1)
-														frame.BackgroundTransparency = 1
-														frame.Visible = false
-														__deobf_slots5.v677_1.chat = frame
-														do
-															local frame3 = Instance.new("Frame", frame)
-															frame3.Size = UDim2.new(1, 0, 0, 44)
-															frame3.BackgroundTransparency = 1
-															frame3.ZIndex = 5
-															__deobf_slots6.v762_1 = Instance.new("TextButton", frame3)
-															__deobf_slots6.v762_1.Size = UDim2.new(0.5, -5, 1, 0)
-															__deobf_slots6.v762_1.AutoButtonColor = false
-															__deobf_slots6.v762_1.BackgroundColor3 = __deobf_slots4.v442_5.SURF2
-															__deobf_slots6.v762_1.Text = ""
-															__deobf_slots6.v762_1.ZIndex = 6
-															__deobf_slots4.v618_1(__deobf_slots6.v762_1, 10)
-															__deobf_slots4.v618_2(__deobf_slots6.v762_1, __deobf_slots4.v442_5.STROKE, 1, 0.5)
-															local textLabel = Instance.new("TextLabel", __deobf_slots6.v762_1)
-															textLabel.Size = UDim2.new(1, -16, 0, 14)
-															textLabel.Position = UDim2.fromOffset(12, 6)
-															textLabel.BackgroundTransparency = 1
-															textLabel.Font = Enum.Font.GothamBold
-															textLabel.Text = "MY LANGUAGE"
-															textLabel.TextSize = 9
-															textLabel.TextColor3 = __deobf_slots4.v442_5.DIM
-															textLabel.TextXAlignment = Enum.TextXAlignment.Left
-															textLabel.ZIndex = 6
-															__deobf_slots6.v762_2 = Instance.new("TextLabel", __deobf_slots6.v762_1)
-															__deobf_slots6.v762_2.Size = UDim2.new(1, -30, 0, 18)
-															__deobf_slots6.v762_2.Position = UDim2.fromOffset(12, 21)
-															__deobf_slots6.v762_2.BackgroundTransparency = 1
-															__deobf_slots6.v762_2.Font = Enum.Font.GothamBlack
-															__deobf_slots6.v762_2.Text = __deobf_slots4.v443_1(__deobf_slots4.v442_6.myLang)
-															__deobf_slots6.v762_2.TextSize = 13
-															__deobf_slots6.v762_2.TextColor3 = __deobf_slots4.v442_5.TEXT
-															__deobf_slots6.v762_2.TextXAlignment = Enum.TextXAlignment.Left
-															__deobf_slots6.v762_2.ZIndex = 6
-															__deobf_slots6.v762_3 = Instance.new("TextLabel", __deobf_slots6.v762_1)
-															__deobf_slots6.v762_3.Size = UDim2.new(0, 18, 1, 0)
-															__deobf_slots6.v762_3.Position = UDim2.new(1, -18, 0, 0)
-															__deobf_slots6.v762_3.BackgroundTransparency = 1
-															__deobf_slots6.v762_3.Font = Enum.Font.GothamBold
-															__deobf_slots6.v762_3.Text = "v"
-															__deobf_slots6.v762_3.TextSize = 12
-															__deobf_slots6.v762_3.TextColor3 = __deobf_slots4.v442_5.DIM
-															__deobf_slots6.v762_3.ZIndex = 6
-															__deobf_slots6.v762_1.MouseEnter:Connect(function()
-																__deobf_slots4.v618_3(__deobf_slots6.v762_1, 0.12, { BackgroundColor3 = Color3.fromRGB(30, 36, 54) })
-															end)
-															__deobf_slots6.v762_1.MouseLeave:Connect(function()
-																__deobf_slots4.v618_3(__deobf_slots6.v762_1, 0.12, { BackgroundColor3 = __deobf_slots4.v442_5.SURF2 })
-															end)
-															frame2 = Instance.new("Frame", frame3)
-														end
-													end
-													frame2.Size = UDim2.new(0.5, -5, 1, 0)
-													frame2.Position = UDim2.new(0.5, 5, 0, 0)
-													frame2.BackgroundColor3 = __deobf_slots4.v442_5.SURF
-													frame2.ZIndex = 5
-													__deobf_slots4.v618_1(frame2, 10)
-													__deobf_slots4.v618_2(frame2, __deobf_slots4.v442_5.STROKE, 1, 0.55)
-													do
-														local textLabel = Instance.new("TextLabel", frame2)
-														textLabel.Size = UDim2.new(1, -16, 0, 14)
-														textLabel.Position = UDim2.fromOffset(12, 6)
-														textLabel.BackgroundTransparency = 1
-														textLabel.Font = Enum.Font.GothamBold
-														textLabel.Text = "THEIR LANGUAGE"
-														textLabel.TextSize = 9
-														textLabel.TextColor3 = __deobf_slots4.v442_5.DIM
-														textLabel.TextXAlignment = Enum.TextXAlignment.Left
-														textLabel.ZIndex = 5
-													end
-												end
-
-												do
-													__deobf_slots5.v677_5 = Instance.new("TextLabel", frame2)
-													__deobf_slots5.v677_5.Size = UDim2.new(1, -40, 0, 18)
-													__deobf_slots5.v677_5.Position = UDim2.fromOffset(12, 21)
-													__deobf_slots5.v677_5.BackgroundTransparency = 1
-													__deobf_slots5.v677_5.Font = Enum.Font.GothamBlack
-													__deobf_slots5.v677_5.Text = __deobf_slots4.v443_1(__deobf_slots4.v442_6.theirLang)
-													__deobf_slots5.v677_5.TextSize = 13
-													__deobf_slots5.v677_5.TextColor3 = __deobf_slots4.v442_5.TEXT
-													__deobf_slots5.v677_5.TextXAlignment = Enum.TextXAlignment.Left
-													__deobf_slots5.v677_5.ZIndex = 5
-													do
-														local textLabel = Instance.new("TextLabel", frame2)
-														textLabel.Size = UDim2.new(0, 40, 0, 14)
-														textLabel.Position = UDim2.new(1, -46, 0, 6)
-														textLabel.BackgroundTransparency = 1
-														textLabel.Font = Enum.Font.GothamBold
-														textLabel.Text = "AUTO"
-														textLabel.TextSize = 8
-														textLabel.TextColor3 = __deobf_slots4.v442_5.GREEN_STROKE
-														textLabel.TextXAlignment = Enum.TextXAlignment.Right
-														textLabel.ZIndex = 5
-													end
-												end
-											end
-
-											local instance2 = Instance.new("TextButton", frame)
-											instance2.Size = UDim2.new(1, 0, 0, 28)
-											instance2.Position = UDim2.fromOffset(0, 50)
-											instance2.BackgroundColor3 = __deobf_slots4.v442_6.translatorOn and __deobf_slots4.v442_5.GREEN1 or __deobf_slots4.v442_5.SURF2
-											instance2.AutoButtonColor = false
-											instance2.Text = __deobf_slots4.v442_6.translatorOn and "AUTO-TRANSLATE INCOMING  •  ON" or "AUTO-TRANSLATE INCOMING  •  OFF"
-											instance2.Font = Enum.Font.GothamBold
-											instance2.TextSize = 11
-											instance2.TextColor3 = __deobf_slots4.v442_6.translatorOn and __deobf_slots4.v442_5.TEXT or __deobf_slots4.v442_5.OFF_TEXT
-											instance2.ZIndex = 5
-											__deobf_slots4.v618_1(instance2, 10)
-											local v72 = __deobf_slots4.v618_2(instance2, __deobf_slots4.v442_6.translatorOn and __deobf_slots4.v442_5.GREEN_STROKE or __deobf_slots4.v442_5.STROKE, 1, 0.5)
-											instance2.MouseButton1Click:Connect(function()
-												__deobf_slots4.v442_6.translatorOn = not __deobf_slots4.v442_6.translatorOn
-												__deobf_slots4.v442_7()
-												instance2.Text = __deobf_slots4.v442_6.translatorOn and "AUTO-TRANSLATE INCOMING  •  ON" or "AUTO-TRANSLATE INCOMING  •  OFF"
-												__deobf_slots4.v618_3(instance2, 0.12, { BackgroundColor3 = __deobf_slots4.v442_6.translatorOn and __deobf_slots4.v442_5.GREEN1 or __deobf_slots4.v442_5.SURF2 })
-												instance2.TextColor3 = __deobf_slots4.v442_6.translatorOn and __deobf_slots4.v442_5.TEXT or __deobf_slots4.v442_5.OFF_TEXT
-												v72.Color = __deobf_slots4.v442_6.translatorOn and __deobf_slots4.v442_5.GREEN_STROKE or __deobf_slots4.v442_5.STROKE
-											end)
-										end
-
-										do
-											local __deobf_slots7 = {}
-											__deobf_slots7.v770_1, __deobf_slots7.v770_2, __deobf_slots7.v770_3 = nil
-											do
-												__deobf_slots7.v770_1 = false
-												__deobf_slots7.v770_2 = Instance.new("Frame", frame)
-												__deobf_slots7.v770_2.Size = UDim2.new(0.5, -5, 0, 0)
-												__deobf_slots7.v770_2.Position = UDim2.fromOffset(0, 44)
-												__deobf_slots7.v770_2.BackgroundColor3 = __deobf_slots4.v442_5.SURF
-												__deobf_slots7.v770_2.BorderSizePixel = 0
-												__deobf_slots7.v770_2.Visible = false
-												__deobf_slots7.v770_2.ClipsDescendants = true
-												__deobf_slots7.v770_2.ZIndex = 30
-												__deobf_slots4.v618_1(__deobf_slots7.v770_2, 10)
-												__deobf_slots4.v618_2(__deobf_slots7.v770_2, __deobf_slots4.v442_5.STROKE, 1, 0.35)
-												__deobf_slots7.v770_3 = Instance.new("ScrollingFrame", __deobf_slots7.v770_2)
-												__deobf_slots7.v770_3.Size = UDim2.fromScale(1, 1)
-												__deobf_slots7.v770_3.BackgroundTransparency = 1
-												__deobf_slots7.v770_3.BorderSizePixel = 0
-												__deobf_slots7.v770_3.ScrollBarThickness = 3
-												__deobf_slots7.v770_3.ScrollBarImageColor3 = __deobf_slots4.v442_5.ACCENT
-												__deobf_slots7.v770_3.CanvasSize = UDim2.new(0, 0, 0, 0)
-												__deobf_slots7.v770_3.AutomaticCanvasSize = Enum.AutomaticSize.Y
-												__deobf_slots7.v770_3.ZIndex = 31
-												do
-													local instance2 = Instance.new("UIListLayout", __deobf_slots7.v770_3)
-													instance2.Padding = UDim.new(0, 3)
-													instance2.SortOrder = Enum.SortOrder.LayoutOrder
-												end
-											end
-
-											do
-												local instance2 = Instance.new("UIPadding", __deobf_slots7.v770_3)
-												instance2.PaddingTop = UDim.new(0, 4)
-												instance2.PaddingBottom = UDim.new(0, 4)
-												instance2.PaddingLeft = UDim.new(0, 4)
-												instance2.PaddingRight = UDim.new(0, 4)
-											end
-
-											for i, v72 in ipairs(__deobf_slots4.v442_10) do
-												local textButton = Instance.new("TextButton", __deobf_slots7.v770_3)
-												textButton.Size = UDim2.new(1, -2, 0, 28)
-												textButton.LayoutOrder = i
-												textButton.AutoButtonColor = false
-												textButton.BackgroundColor3 = __deobf_slots4.v442_5.SURF2
-												textButton.Text = ""
-												textButton.ZIndex = 32
-												__deobf_slots4.v618_1(textButton, 8)
-												local textLabel = Instance.new("TextLabel", textButton)
-												textLabel.Size = UDim2.new(1, -20, 1, 0)
-												textLabel.Position = UDim2.fromOffset(12, 0)
+												local frame3 = Instance.new("Frame", frame)
+												frame3.Size = UDim2.new(1, 0, 0, 44)
+												frame3.BackgroundTransparency = 1
+												frame3.ZIndex = 5
+												__deobf_slots6.v762_1 = Instance.new("TextButton", frame3)
+												__deobf_slots6.v762_1.Size = UDim2.new(0.5, -5, 1, 0)
+												__deobf_slots6.v762_1.AutoButtonColor = false
+												__deobf_slots6.v762_1.BackgroundColor3 = __deobf_slots4.v442_5.SURF2
+												__deobf_slots6.v762_1.Text = ""
+												__deobf_slots6.v762_1.ZIndex = 6
+												__deobf_slots4.v618_1(__deobf_slots6.v762_1, 10)
+												__deobf_slots4.v618_2(__deobf_slots6.v762_1, __deobf_slots4.v442_5.STROKE, 1, 0.5)
+												local textLabel = Instance.new("TextLabel", __deobf_slots6.v762_1)
+												textLabel.Size = UDim2.new(1, -16, 0, 14)
+												textLabel.Position = UDim2.fromOffset(12, 6)
 												textLabel.BackgroundTransparency = 1
-												textLabel.Font = Enum.Font.GothamMedium
-												textLabel.Text = v72.name
-												textLabel.TextSize = 12
-												textLabel.TextColor3 = __deobf_slots4.v442_5.TEXT
+												textLabel.Font = Enum.Font.GothamBold
+												textLabel.Text = "MY LANGUAGE"
+												textLabel.TextSize = 9
+												textLabel.TextColor3 = __deobf_slots4.v442_5.DIM
 												textLabel.TextXAlignment = Enum.TextXAlignment.Left
-												textLabel.ZIndex = 32
-												if v72.code == __deobf_slots4.v442_6.myLang then
-													local instance2 = Instance.new("TextLabel", textButton)
-													instance2.Size = UDim2.new(0, 20, 1, 0)
-													instance2.Position = UDim2.new(1, -30, 0, 0)
-													instance2.BackgroundTransparency = 1
-													instance2.Font = Enum.Font.GothamBold
-													instance2.Text = "•"
-													instance2.TextSize = 16
-													instance2.TextColor3 = __deobf_slots4.v442_5.ACCENT
-													instance2.ZIndex = 33
-												end
-												textButton.MouseEnter:Connect(function()
-													__deobf_slots4.v618_3(textButton, 0.1, { BackgroundColor3 = __deobf_slots4.v442_5.ACCENT2 })
+												textLabel.ZIndex = 6
+												__deobf_slots6.v762_2 = Instance.new("TextLabel", __deobf_slots6.v762_1)
+												__deobf_slots6.v762_2.Size = UDim2.new(1, -30, 0, 18)
+												__deobf_slots6.v762_2.Position = UDim2.fromOffset(12, 21)
+												__deobf_slots6.v762_2.BackgroundTransparency = 1
+												__deobf_slots6.v762_2.Font = Enum.Font.GothamBlack
+												__deobf_slots6.v762_2.Text = __deobf_slots4.v443_1(__deobf_slots4.v442_6.myLang)
+												__deobf_slots6.v762_2.TextSize = 13
+												__deobf_slots6.v762_2.TextColor3 = __deobf_slots4.v442_5.TEXT
+												__deobf_slots6.v762_2.TextXAlignment = Enum.TextXAlignment.Left
+												__deobf_slots6.v762_2.ZIndex = 6
+												__deobf_slots6.v762_3 = Instance.new("TextLabel", __deobf_slots6.v762_1)
+												__deobf_slots6.v762_3.Size = UDim2.new(0, 18, 1, 0)
+												__deobf_slots6.v762_3.Position = UDim2.new(1, -18, 0, 0)
+												__deobf_slots6.v762_3.BackgroundTransparency = 1
+												__deobf_slots6.v762_3.Font = Enum.Font.GothamBold
+												__deobf_slots6.v762_3.Text = "v"
+												__deobf_slots6.v762_3.TextSize = 12
+												__deobf_slots6.v762_3.TextColor3 = __deobf_slots4.v442_5.DIM
+												__deobf_slots6.v762_3.ZIndex = 6
+												__deobf_slots6.v762_1.MouseEnter:Connect(function()
+													__deobf_slots4.v618_3(__deobf_slots6.v762_1, 0.12, { BackgroundColor3 = Color3.fromRGB(30, 36, 54) })
 												end)
-												textButton.MouseLeave:Connect(function()
-													__deobf_slots4.v618_3(textButton, 0.1, { BackgroundColor3 = __deobf_slots4.v442_5.SURF2 })
+												__deobf_slots6.v762_1.MouseLeave:Connect(function()
+													__deobf_slots4.v618_3(__deobf_slots6.v762_1, 0.12, { BackgroundColor3 = __deobf_slots4.v442_5.SURF2 })
 												end)
-												textButton.MouseButton1Click:Connect(function()
-													__deobf_slots4.v442_6.myLang = v72.code
-													__deobf_slots4.v442_7()
-													__deobf_slots6.v762_2.Text = v72.name
-													__deobf_slots7.v770_1 = false
-													__deobf_slots7.v770_2.Visible = false
-													__deobf_slots6.v762_3.Text = "v"
-												end)
+												frame2 = Instance.new("Frame", frame3)
 											end
-
-											__deobf_slots6.v762_1.MouseButton1Click:Connect(function()
-												__deobf_slots7.v770_1 = not __deobf_slots7.v770_1
-												if __deobf_slots7.v770_1 then
-													__deobf_slots7.v770_2.Visible = true
-													__deobf_slots6.v762_3.Text = "^"
-													__deobf_slots7.v770_2.Size = UDim2.new(0.5, -5, 0, 0)
-													__deobf_slots4.v618_3(__deobf_slots7.v770_2, 0.16, { Size = UDim2.new(0.5, -5, 1, 190) })
-												else
-													__deobf_slots6.v762_3.Text = "v"
-													local tween = __deobf_slots4.v441_5:Create(__deobf_slots7.v770_2, TweenInfo.new(0.14, Enum.EasingStyle.Quad), { Size = UDim2.new(0.5, -5, 1, 0) })
-													tween:Play()
-													tween.Completed:Connect(function()
-														if not __deobf_slots7.v770_1 then __deobf_slots7.v770_2.Visible = false end
-													end)
-												end
-											end)
-										end
-									end
-
-									local instance2
-									do
-										do
-											instance2 = Instance.new("ScrollingFrame", frame)
-											instance2.Size = UDim2.new(1, 0, 1, -232)
-											instance2.Position = UDim2.fromOffset(0, 86)
-											instance2.BackgroundColor3 = __deobf_slots4.v442_5.SURF
-											instance2.BorderSizePixel = 0
-											instance2.ScrollBarThickness = 4
-											instance2.ScrollBarImageColor3 = __deobf_slots4.v442_5.ACCENT
-											instance2.CanvasSize = UDim2.new(0, 0, 0, 0)
-											instance2.AutomaticCanvasSize = Enum.AutomaticSize.Y
-											__deobf_slots4.v618_1(instance2, 10)
-											__deobf_slots4.v618_2(instance2, __deobf_slots4.v442_5.STROKE, 1, 0.6)
+											frame2.Size = UDim2.new(0.5, -5, 1, 0)
+											frame2.Position = UDim2.new(0.5, 5, 0, 0)
+											frame2.BackgroundColor3 = __deobf_slots4.v442_5.SURF
+											frame2.ZIndex = 5
+											__deobf_slots4.v618_1(frame2, 10)
+											__deobf_slots4.v618_2(frame2, __deobf_slots4.v442_5.STROKE, 1, 0.55)
 											do
-												local uiPadding = Instance.new("UIPadding", instance2)
-												uiPadding.PaddingLeft = UDim.new(0, 8)
-												uiPadding.PaddingRight = UDim.new(0, 8)
-												uiPadding.PaddingTop = UDim.new(0, 8)
-												uiPadding.PaddingBottom = UDim.new(0, 8)
+												local textLabel = Instance.new("TextLabel", frame2)
+												textLabel.Size = UDim2.new(1, -16, 0, 14)
+												textLabel.Position = UDim2.fromOffset(12, 6)
+												textLabel.BackgroundTransparency = 1
+												textLabel.Font = Enum.Font.GothamBold
+												textLabel.Text = "THEIR LANGUAGE"
+												textLabel.TextSize = 9
+												textLabel.TextColor3 = __deobf_slots4.v442_5.DIM
+												textLabel.TextXAlignment = Enum.TextXAlignment.Left
+												textLabel.ZIndex = 5
 											end
 										end
 										do
-											local instance3 = Instance.new("UIListLayout", instance2)
-											instance3.Padding = UDim.new(0, 6)
-											instance3.SortOrder = Enum.SortOrder.LayoutOrder
+											__deobf_slots5.v677_5 = Instance.new("TextLabel", frame2)
+											__deobf_slots5.v677_5.Size = UDim2.new(1, -40, 0, 18)
+											__deobf_slots5.v677_5.Position = UDim2.fromOffset(12, 21)
+											__deobf_slots5.v677_5.BackgroundTransparency = 1
+											__deobf_slots5.v677_5.Font = Enum.Font.GothamBlack
+											__deobf_slots5.v677_5.Text = __deobf_slots4.v443_1(__deobf_slots4.v442_6.theirLang)
+											__deobf_slots5.v677_5.TextSize = 13
+											__deobf_slots5.v677_5.TextColor3 = __deobf_slots4.v442_5.TEXT
+											__deobf_slots5.v677_5.TextXAlignment = Enum.TextXAlignment.Left
+											__deobf_slots5.v677_5.ZIndex = 5
+											do
+												local textLabel = Instance.new("TextLabel", frame2)
+												textLabel.Size = UDim2.new(0, 40, 0, 14)
+												textLabel.Position = UDim2.new(1, -46, 0, 6)
+												textLabel.BackgroundTransparency = 1
+												textLabel.Font = Enum.Font.GothamBold
+												textLabel.Text = "AUTO"
+												textLabel.TextSize = 8
+												textLabel.TextColor3 = __deobf_slots4.v442_5.GREEN_STROKE
+												textLabel.TextXAlignment = Enum.TextXAlignment.Right
+												textLabel.ZIndex = 5
+											end
 										end
 									end
-
-									local textLabel = Instance.new("TextLabel", instance2)
-									textLabel.Size = UDim2.new(1, 0, 0, 40)
-									textLabel.BackgroundTransparency = 1
-									textLabel.Font = Enum.Font.Gotham
-									textLabel.Text = "their messages appear here, translated"
-									textLabel.TextSize = 11
-									textLabel.TextColor3 = __deobf_slots4.v442_5.OFF_TEXT
-									textLabel.TextWrapped = true
-									local layoutOrder = 0
-									__deobf_slots5.v677_6 = 0
-									__deobf_slots5.v677_7 = false
-
-									__deobf_slots5.v677_8 = function()
-										for _, child in ipairs(instance2:GetChildren()) do
-											if child:IsA("Frame") then child:Destroy() end
+									local instance2 = Instance.new("TextButton", frame)
+									instance2.Size = UDim2.new(1, 0, 0, 28)
+									instance2.Position = UDim2.fromOffset(0, 50)
+									instance2.BackgroundColor3 = __deobf_slots4.v442_6.translatorOn and __deobf_slots4.v442_5.GREEN1 or __deobf_slots4.v442_5.SURF2
+									instance2.AutoButtonColor = false
+									instance2.Text = __deobf_slots4.v442_6.translatorOn and "AUTO-TRANSLATE INCOMING  •  ON" or "AUTO-TRANSLATE INCOMING  •  OFF"
+									instance2.Font = Enum.Font.GothamBold
+									instance2.TextSize = 11
+									instance2.TextColor3 = __deobf_slots4.v442_6.translatorOn and __deobf_slots4.v442_5.TEXT or __deobf_slots4.v442_5.OFF_TEXT
+									instance2.ZIndex = 5
+									__deobf_slots4.v618_1(instance2, 10)
+									local v72 = __deobf_slots4.v618_2(instance2, __deobf_slots4.v442_6.translatorOn and __deobf_slots4.v442_5.GREEN_STROKE or __deobf_slots4.v442_5.STROKE, 1, 0.5)
+									instance2.MouseButton1Click:Connect(function()
+										__deobf_slots4.v442_6.translatorOn = not __deobf_slots4.v442_6.translatorOn
+										__deobf_slots4.v442_7()
+										instance2.Text = __deobf_slots4.v442_6.translatorOn and "AUTO-TRANSLATE INCOMING  •  ON" or "AUTO-TRANSLATE INCOMING  •  OFF"
+										__deobf_slots4.v618_3(instance2, 0.12, { BackgroundColor3 = __deobf_slots4.v442_6.translatorOn and __deobf_slots4.v442_5.GREEN1 or __deobf_slots4.v442_5.SURF2 })
+										instance2.TextColor3 = __deobf_slots4.v442_6.translatorOn and __deobf_slots4.v442_5.TEXT or __deobf_slots4.v442_5.OFF_TEXT
+										v72.Color = __deobf_slots4.v442_6.translatorOn and __deobf_slots4.v442_5.GREEN_STROKE or __deobf_slots4.v442_5.STROKE
+									end)
+								end
+								do
+									local __deobf_slots7 = {}
+									__deobf_slots7.v770_1, __deobf_slots7.v770_2, __deobf_slots7.v770_3 = nil
+									do
+										__deobf_slots7.v770_1 = false
+										__deobf_slots7.v770_2 = Instance.new("Frame", frame)
+										__deobf_slots7.v770_2.Size = UDim2.new(0.5, -5, 0, 0)
+										__deobf_slots7.v770_2.Position = UDim2.fromOffset(0, 44)
+										__deobf_slots7.v770_2.BackgroundColor3 = __deobf_slots4.v442_5.SURF
+										__deobf_slots7.v770_2.BorderSizePixel = 0
+										__deobf_slots7.v770_2.Visible = false
+										__deobf_slots7.v770_2.ClipsDescendants = true
+										__deobf_slots7.v770_2.ZIndex = 30
+										__deobf_slots4.v618_1(__deobf_slots7.v770_2, 10)
+										__deobf_slots4.v618_2(__deobf_slots7.v770_2, __deobf_slots4.v442_5.STROKE, 1, 0.35)
+										__deobf_slots7.v770_3 = Instance.new("ScrollingFrame", __deobf_slots7.v770_2)
+										__deobf_slots7.v770_3.Size = UDim2.fromScale(1, 1)
+										__deobf_slots7.v770_3.BackgroundTransparency = 1
+										__deobf_slots7.v770_3.BorderSizePixel = 0
+										__deobf_slots7.v770_3.ScrollBarThickness = 3
+										__deobf_slots7.v770_3.ScrollBarImageColor3 = __deobf_slots4.v442_5.ACCENT
+										__deobf_slots7.v770_3.CanvasSize = UDim2.new(0, 0, 0, 0)
+										__deobf_slots7.v770_3.AutomaticCanvasSize = Enum.AutomaticSize.Y
+										__deobf_slots7.v770_3.ZIndex = 31
+										do
+											local instance2 = Instance.new("UIListLayout", __deobf_slots7.v770_3)
+											instance2.Padding = UDim.new(0, 3)
+											instance2.SortOrder = Enum.SortOrder.LayoutOrder
 										end
-										textLabel.Visible = true
-										layoutOrder = 0
-										__deobf_slots4.v442_6.theirLang = "auto"
-										__deobf_slots5.v677_5.Text = __deobf_slots4.v443_1("auto")
-										__deobf_slots5.v677_6 = 0
-										__deobf_slots5.v677_7 = true
 									end
-
-									__deobf_slots5.v677_9 = function(text, text2)
-										textLabel.Visible = false
-										layoutOrder += 1
-										local frame2 = Instance.new("Frame", instance2)
-										frame2.Size = UDim2.new(1, 0, 0, 0)
-										frame2.AutomaticSize = Enum.AutomaticSize.Y
-										frame2.BackgroundColor3 = __deobf_slots4.v442_5.SURF2
-										frame2.BorderSizePixel = 0
-										frame2.LayoutOrder = layoutOrder
-										__deobf_slots4.v618_1(frame2, 8)
-										__deobf_slots4.v618_2(frame2, __deobf_slots4.v442_5.STROKE, 1, 0.7)
-										local uiPadding = Instance.new("UIPadding", frame2)
-										uiPadding.PaddingLeft = UDim.new(0, 8)
-										uiPadding.PaddingRight = UDim.new(0, 8)
-										uiPadding.PaddingTop = UDim.new(0, 6)
-										uiPadding.PaddingBottom = UDim.new(0, 6)
-										local instance3 = Instance.new("UIListLayout", frame2)
-										instance3.Padding = UDim.new(0, 2)
-										instance3.SortOrder = Enum.SortOrder.LayoutOrder
-										local textLabel2 = Instance.new("TextLabel", frame2)
-										textLabel2.Size = UDim2.new(1, 0, 0, 0)
-										textLabel2.AutomaticSize = Enum.AutomaticSize.Y
-										textLabel2.BackgroundTransparency = 1
-										textLabel2.Font = Enum.Font.GothamBold
-										textLabel2.Text = text2
-										textLabel2.TextSize = 13
-										textLabel2.TextColor3 = __deobf_slots4.v442_5.TEXT
-										textLabel2.TextXAlignment = Enum.TextXAlignment.Left
-										textLabel2.TextWrapped = true
-										textLabel2.LayoutOrder = 1
-										local textLabel3 = Instance.new("TextLabel", frame2)
-										textLabel3.Size = UDim2.new(1, 0, 0, 0)
-										textLabel3.AutomaticSize = Enum.AutomaticSize.Y
-										textLabel3.BackgroundTransparency = 1
-										textLabel3.Font = Enum.Font.Gotham
-										textLabel3.Text = text
-										textLabel3.TextSize = 10
-										textLabel3.TextColor3 = __deobf_slots4.v442_5.OFF_TEXT
-										textLabel3.TextXAlignment = Enum.TextXAlignment.Left
-										textLabel3.TextWrapped = true
-										textLabel3.LayoutOrder = 2
-										task.defer(function()
-											instance2.CanvasPosition = Vector2.new(0, instance2.AbsoluteCanvasSize.Y)
+									do
+										local instance2 = Instance.new("UIPadding", __deobf_slots7.v770_3)
+										instance2.PaddingTop = UDim.new(0, 4)
+										instance2.PaddingBottom = UDim.new(0, 4)
+										instance2.PaddingLeft = UDim.new(0, 4)
+										instance2.PaddingRight = UDim.new(0, 4)
+									end
+									for i, v72 in ipairs(__deobf_slots4.v442_10) do
+										local textButton = Instance.new("TextButton", __deobf_slots7.v770_3)
+										textButton.Size = UDim2.new(1, -2, 0, 28)
+										textButton.LayoutOrder = i
+										textButton.AutoButtonColor = false
+										textButton.BackgroundColor3 = __deobf_slots4.v442_5.SURF2
+										textButton.Text = ""
+										textButton.ZIndex = 32
+										__deobf_slots4.v618_1(textButton, 8)
+										local textLabel = Instance.new("TextLabel", textButton)
+										textLabel.Size = UDim2.new(1, -20, 1, 0)
+										textLabel.Position = UDim2.fromOffset(12, 0)
+										textLabel.BackgroundTransparency = 1
+										textLabel.Font = Enum.Font.GothamMedium
+										textLabel.Text = v72.name
+										textLabel.TextSize = 12
+										textLabel.TextColor3 = __deobf_slots4.v442_5.TEXT
+										textLabel.TextXAlignment = Enum.TextXAlignment.Left
+										textLabel.ZIndex = 32
+										if v72.code == __deobf_slots4.v442_6.myLang then
+											local instance2 = Instance.new("TextLabel", textButton)
+											instance2.Size = UDim2.new(0, 20, 1, 0)
+											instance2.Position = UDim2.new(1, -30, 0, 0)
+											instance2.BackgroundTransparency = 1
+											instance2.Font = Enum.Font.GothamBold
+											instance2.Text = "•"
+											instance2.TextSize = 16
+											instance2.TextColor3 = __deobf_slots4.v442_5.ACCENT
+											instance2.ZIndex = 33
+										end
+										textButton.MouseEnter:Connect(function()
+											__deobf_slots4.v618_3(textButton, 0.1, { BackgroundColor3 = __deobf_slots4.v442_5.ACCENT2 })
+										end)
+										textButton.MouseLeave:Connect(function()
+											__deobf_slots4.v618_3(textButton, 0.1, { BackgroundColor3 = __deobf_slots4.v442_5.SURF2 })
+										end)
+										textButton.MouseButton1Click:Connect(function()
+											__deobf_slots4.v442_6.myLang = v72.code
+											__deobf_slots4.v442_7()
+											__deobf_slots6.v762_2.Text = v72.name
+											__deobf_slots7.v770_1 = false
+											__deobf_slots7.v770_2.Visible = false
+											__deobf_slots6.v762_3.Text = "v"
 										end)
 									end
-								end
-
-								do
-									local instance2
-									do
-										local instance3
-										do
-											instance3 = Instance.new("Frame", frame)
-											instance3.Size = UDim2.new(1, 0, 0, 138)
-											instance3.Position = UDim2.new(0, 0, 1, -138)
-											instance3.BackgroundTransparency = 1
-											__deobf_slots5.v677_10 = Instance.new("TextBox", instance3)
-											__deobf_slots5.v677_10.Size = UDim2.new(1, 0, 0, 42)
-											__deobf_slots5.v677_10.Position = UDim2.fromOffset(0, 0)
-											__deobf_slots5.v677_10.BackgroundColor3 = __deobf_slots4.v442_5.SURF
-											__deobf_slots5.v677_10.Text = ""
-											__deobf_slots5.v677_10.PlaceholderText = "type your reply…"
-											__deobf_slots5.v677_10.PlaceholderColor3 = __deobf_slots4.v442_5.OFF_TEXT
-											__deobf_slots5.v677_10.Font = Enum.Font.Gotham
-											__deobf_slots5.v677_10.TextSize = 12
-											__deobf_slots5.v677_10.TextColor3 = __deobf_slots4.v442_5.TEXT
-											__deobf_slots5.v677_10.TextWrapped = true
-											__deobf_slots5.v677_10.MultiLine = true
-											__deobf_slots5.v677_10.TextXAlignment = Enum.TextXAlignment.Left
-											__deobf_slots5.v677_10.TextYAlignment = Enum.TextYAlignment.Top
-											__deobf_slots5.v677_10.ClearTextOnFocus = false
-											__deobf_slots5.v677_10.ClipsDescendants = true
-											__deobf_slots4.v618_1(__deobf_slots5.v677_10, 10)
-											__deobf_slots4.v618_2(__deobf_slots5.v677_10, __deobf_slots4.v442_5.STROKE, 1, 0.55)
-											do
-												local uiPadding = Instance.new("UIPadding", __deobf_slots5.v677_10)
-												uiPadding.PaddingLeft = UDim.new(0, 10)
-												uiPadding.PaddingTop = UDim.new(0, 7)
-												uiPadding.PaddingRight = UDim.new(0, 10)
-												uiPadding.PaddingBottom = UDim.new(0, 6)
-											end
+									__deobf_slots6.v762_1.MouseButton1Click:Connect(function()
+										__deobf_slots7.v770_1 = not __deobf_slots7.v770_1
+										if __deobf_slots7.v770_1 then
+											__deobf_slots7.v770_2.Visible = true
+											__deobf_slots6.v762_3.Text = "^"
+											__deobf_slots7.v770_2.Size = UDim2.new(0.5, -5, 0, 0)
+											__deobf_slots4.v618_3(__deobf_slots7.v770_2, 0.16, { Size = UDim2.new(0.5, -5, 1, 190) })
+										else
+											__deobf_slots6.v762_3.Text = "v"
+											local tween = __deobf_slots4.v441_5:Create(__deobf_slots7.v770_2, TweenInfo.new(0.14, Enum.EasingStyle.Quad), { Size = UDim2.new(0.5, -5, 1, 0) })
+											tween:Play()
+											tween.Completed:Connect(function()
+												if not __deobf_slots7.v770_1 then __deobf_slots7.v770_2.Visible = false end
+											end)
 										end
-
-										__deobf_slots5.v678_1 = Instance.new("TextLabel", instance3)
-										__deobf_slots5.v678_1.Size = UDim2.new(1, 0, 0, 42)
-										__deobf_slots5.v678_1.Position = UDim2.fromOffset(0, 48)
-										__deobf_slots5.v678_1.BackgroundColor3 = __deobf_slots4.v442_5.SURF2
-										__deobf_slots5.v678_1.Text = ""
-										__deobf_slots5.v678_1.Font = Enum.Font.GothamMedium
-										__deobf_slots5.v678_1.TextSize = 11
-										__deobf_slots5.v678_1.TextColor3 = __deobf_slots4.v442_5.TEXT
-										__deobf_slots5.v678_1.TextWrapped = true
-										__deobf_slots5.v678_1.TextXAlignment = Enum.TextXAlignment.Left
-										__deobf_slots5.v678_1.TextYAlignment = Enum.TextYAlignment.Top
-										__deobf_slots4.v618_1(__deobf_slots5.v678_1, 10)
-										__deobf_slots4.v618_2(__deobf_slots5.v678_1, __deobf_slots4.v442_5.STROKE, 1, 0.6)
+									end)
+								end
+								local instance2
+								do
+									instance2 = Instance.new("ScrollingFrame", frame)
+									instance2.Size = UDim2.new(1, 0, 1, -232)
+									instance2.Position = UDim2.fromOffset(0, 86)
+									instance2.BackgroundColor3 = __deobf_slots4.v442_5.SURF
+									instance2.BorderSizePixel = 0
+									instance2.ScrollBarThickness = 4
+									instance2.ScrollBarImageColor3 = __deobf_slots4.v442_5.ACCENT
+									instance2.CanvasSize = UDim2.new(0, 0, 0, 0)
+									instance2.AutomaticCanvasSize = Enum.AutomaticSize.Y
+									__deobf_slots4.v618_1(instance2, 10)
+									__deobf_slots4.v618_2(instance2, __deobf_slots4.v442_5.STROKE, 1, 0.6)
+									do
+										local uiPadding = Instance.new("UIPadding", instance2)
+										uiPadding.PaddingLeft = UDim.new(0, 8)
+										uiPadding.PaddingRight = UDim.new(0, 8)
+										uiPadding.PaddingTop = UDim.new(0, 8)
+										uiPadding.PaddingBottom = UDim.new(0, 8)
+									end
+									do
+										local instance3 = Instance.new("UIListLayout", instance2)
+										instance3.Padding = UDim.new(0, 6)
+										instance3.SortOrder = Enum.SortOrder.LayoutOrder
+									end
+								end
+								local textLabel = Instance.new("TextLabel", instance2)
+								textLabel.Size = UDim2.new(1, 0, 0, 40)
+								textLabel.BackgroundTransparency = 1
+								textLabel.Font = Enum.Font.Gotham
+								textLabel.Text = "their messages appear here, translated"
+								textLabel.TextSize = 11
+								textLabel.TextColor3 = __deobf_slots4.v442_5.OFF_TEXT
+								textLabel.TextWrapped = true
+								local layoutOrder = 0
+								__deobf_slots5.v677_6 = 0
+								__deobf_slots5.v677_7 = false
+								__deobf_slots5.v677_8 = function()
+									for _, child in ipairs(instance2:GetChildren()) do
+										if child:IsA("Frame") then child:Destroy() end
+									end
+									textLabel.Visible = true
+									layoutOrder = 0
+									__deobf_slots4.v442_6.theirLang = "auto"
+									__deobf_slots5.v677_5.Text = __deobf_slots4.v443_1("auto")
+									__deobf_slots5.v677_6 = 0
+									__deobf_slots5.v677_7 = true
+								end
+								__deobf_slots5.v677_9 = function(text, text2)
+									textLabel.Visible = false
+									layoutOrder += 1
+									local frame2 = Instance.new("Frame", instance2)
+									frame2.Size = UDim2.new(1, 0, 0, 0)
+									frame2.AutomaticSize = Enum.AutomaticSize.Y
+									frame2.BackgroundColor3 = __deobf_slots4.v442_5.SURF2
+									frame2.BorderSizePixel = 0
+									frame2.LayoutOrder = layoutOrder
+									__deobf_slots4.v618_1(frame2, 8)
+									__deobf_slots4.v618_2(frame2, __deobf_slots4.v442_5.STROKE, 1, 0.7)
+									local uiPadding = Instance.new("UIPadding", frame2)
+									uiPadding.PaddingLeft = UDim.new(0, 8)
+									uiPadding.PaddingRight = UDim.new(0, 8)
+									uiPadding.PaddingTop = UDim.new(0, 6)
+									uiPadding.PaddingBottom = UDim.new(0, 6)
+									local instance3 = Instance.new("UIListLayout", frame2)
+									instance3.Padding = UDim.new(0, 2)
+									instance3.SortOrder = Enum.SortOrder.LayoutOrder
+									local textLabel2 = Instance.new("TextLabel", frame2)
+									textLabel2.Size = UDim2.new(1, 0, 0, 0)
+									textLabel2.AutomaticSize = Enum.AutomaticSize.Y
+									textLabel2.BackgroundTransparency = 1
+									textLabel2.Font = Enum.Font.GothamBold
+									textLabel2.Text = text2
+									textLabel2.TextSize = 13
+									textLabel2.TextColor3 = __deobf_slots4.v442_5.TEXT
+									textLabel2.TextXAlignment = Enum.TextXAlignment.Left
+									textLabel2.TextWrapped = true
+									textLabel2.LayoutOrder = 1
+									local textLabel3 = Instance.new("TextLabel", frame2)
+									textLabel3.Size = UDim2.new(1, 0, 0, 0)
+									textLabel3.AutomaticSize = Enum.AutomaticSize.Y
+									textLabel3.BackgroundTransparency = 1
+									textLabel3.Font = Enum.Font.Gotham
+									textLabel3.Text = text
+									textLabel3.TextSize = 10
+									textLabel3.TextColor3 = __deobf_slots4.v442_5.OFF_TEXT
+									textLabel3.TextXAlignment = Enum.TextXAlignment.Left
+									textLabel3.TextWrapped = true
+									textLabel3.LayoutOrder = 2
+									task.defer(function()
+										instance2.CanvasPosition = Vector2.new(0, instance2.AbsoluteCanvasSize.Y)
+									end)
+								end
+								do
+									local instance3
+									do
+										instance3 = Instance.new("Frame", frame)
+										instance3.Size = UDim2.new(1, 0, 0, 138)
+										instance3.Position = UDim2.new(0, 0, 1, -138)
+										instance3.BackgroundTransparency = 1
+										__deobf_slots5.v677_10 = Instance.new("TextBox", instance3)
+										__deobf_slots5.v677_10.Size = UDim2.new(1, 0, 0, 42)
+										__deobf_slots5.v677_10.Position = UDim2.fromOffset(0, 0)
+										__deobf_slots5.v677_10.BackgroundColor3 = __deobf_slots4.v442_5.SURF
+										__deobf_slots5.v677_10.Text = ""
+										__deobf_slots5.v677_10.PlaceholderText = "type your reply…"
+										__deobf_slots5.v677_10.PlaceholderColor3 = __deobf_slots4.v442_5.OFF_TEXT
+										__deobf_slots5.v677_10.Font = Enum.Font.Gotham
+										__deobf_slots5.v677_10.TextSize = 12
+										__deobf_slots5.v677_10.TextColor3 = __deobf_slots4.v442_5.TEXT
+										__deobf_slots5.v677_10.TextWrapped = true
+										__deobf_slots5.v677_10.MultiLine = true
+										__deobf_slots5.v677_10.TextXAlignment = Enum.TextXAlignment.Left
+										__deobf_slots5.v677_10.TextYAlignment = Enum.TextYAlignment.Top
+										__deobf_slots5.v677_10.ClearTextOnFocus = false
+										__deobf_slots5.v677_10.ClipsDescendants = true
+										__deobf_slots4.v618_1(__deobf_slots5.v677_10, 10)
+										__deobf_slots4.v618_2(__deobf_slots5.v677_10, __deobf_slots4.v442_5.STROKE, 1, 0.55)
 										do
-											local uiPadding = Instance.new("UIPadding", __deobf_slots5.v678_1)
+											local uiPadding = Instance.new("UIPadding", __deobf_slots5.v677_10)
 											uiPadding.PaddingLeft = UDim.new(0, 10)
+											uiPadding.PaddingTop = UDim.new(0, 7)
 											uiPadding.PaddingRight = UDim.new(0, 10)
-											uiPadding.PaddingTop = UDim.new(0, 6)
 											uiPadding.PaddingBottom = UDim.new(0, 6)
 										end
-										__deobf_slots5.v678_2 = Instance.new("TextLabel", __deobf_slots5.v678_1)
-										__deobf_slots5.v678_2.Size = UDim2.new(0, 90, 0, 12)
-										__deobf_slots5.v678_2.Position = UDim2.new(1, -100, 0, 4)
-										__deobf_slots5.v678_2.BackgroundTransparency = 1
-										__deobf_slots5.v678_2.Font = Enum.Font.GothamBold
-										__deobf_slots5.v678_2.Text = "WILL SEND"
-										__deobf_slots5.v678_2.TextSize = 8
-										__deobf_slots5.v678_2.TextColor3 = __deobf_slots4.v442_5.GREEN_STROKE
-										__deobf_slots5.v678_2.TextXAlignment = Enum.TextXAlignment.Right
-										__deobf_slots5.v678_2.Visible = false
-										__deobf_slots5.v678_3 = Instance.new("TextLabel", __deobf_slots5.v678_1)
-										__deobf_slots5.v678_3.Size = UDim2.fromScale(1, 1)
-										__deobf_slots5.v678_3.BackgroundTransparency = 1
-										__deobf_slots5.v678_3.Font = Enum.Font.Gotham
-										__deobf_slots5.v678_3.Text = "translated preview appears here…"
-										__deobf_slots5.v678_3.TextSize = 11
-										__deobf_slots5.v678_3.TextColor3 = __deobf_slots4.v442_5.OFF_TEXT
-										__deobf_slots5.v678_3.TextXAlignment = Enum.TextXAlignment.Left
-										__deobf_slots5.v678_3.TextYAlignment = Enum.TextYAlignment.Top
-										__deobf_slots5.v678_4 = ""
-										instance2 = Instance.new("Frame", instance3)
 									end
-
+									__deobf_slots5.v678_1 = Instance.new("TextLabel", instance3)
+									__deobf_slots5.v678_1.Size = UDim2.new(1, 0, 0, 42)
+									__deobf_slots5.v678_1.Position = UDim2.fromOffset(0, 48)
+									__deobf_slots5.v678_1.BackgroundColor3 = __deobf_slots4.v442_5.SURF2
+									__deobf_slots5.v678_1.Text = ""
+									__deobf_slots5.v678_1.Font = Enum.Font.GothamMedium
+									__deobf_slots5.v678_1.TextSize = 11
+									__deobf_slots5.v678_1.TextColor3 = __deobf_slots4.v442_5.TEXT
+									__deobf_slots5.v678_1.TextWrapped = true
+									__deobf_slots5.v678_1.TextXAlignment = Enum.TextXAlignment.Left
+									__deobf_slots5.v678_1.TextYAlignment = Enum.TextYAlignment.Top
+									__deobf_slots4.v618_1(__deobf_slots5.v678_1, 10)
+									__deobf_slots4.v618_2(__deobf_slots5.v678_1, __deobf_slots4.v442_5.STROKE, 1, 0.6)
 									do
-										instance2.Size = UDim2.new(1, 0, 0, 32)
-										instance2.Position = UDim2.fromOffset(0, 96)
-										instance2.BackgroundTransparency = 1
-										do
-											local instance3 = Instance.new("UIListLayout", instance2)
-											instance3.FillDirection = Enum.FillDirection.Horizontal
-											instance3.Padding = UDim.new(0, 6)
-											instance3.SortOrder = Enum.SortOrder.LayoutOrder
-										end
+										local uiPadding = Instance.new("UIPadding", __deobf_slots5.v678_1)
+										uiPadding.PaddingLeft = UDim.new(0, 10)
+										uiPadding.PaddingRight = UDim.new(0, 10)
+										uiPadding.PaddingTop = UDim.new(0, 6)
+										uiPadding.PaddingBottom = UDim.new(0, 6)
 									end
-
-									local v72 = __deobf_slots4.v618_5(instance2, "TRANSLATE", { textSize = 12 })
+									__deobf_slots5.v678_2 = Instance.new("TextLabel", __deobf_slots5.v678_1)
+									__deobf_slots5.v678_2.Size = UDim2.new(0, 90, 0, 12)
+									__deobf_slots5.v678_2.Position = UDim2.new(1, -100, 0, 4)
+									__deobf_slots5.v678_2.BackgroundTransparency = 1
+									__deobf_slots5.v678_2.Font = Enum.Font.GothamBold
+									__deobf_slots5.v678_2.Text = "WILL SEND"
+									__deobf_slots5.v678_2.TextSize = 8
+									__deobf_slots5.v678_2.TextColor3 = __deobf_slots4.v442_5.GREEN_STROKE
+									__deobf_slots5.v678_2.TextXAlignment = Enum.TextXAlignment.Right
+									__deobf_slots5.v678_2.Visible = false
+									__deobf_slots5.v678_3 = Instance.new("TextLabel", __deobf_slots5.v678_1)
+									__deobf_slots5.v678_3.Size = UDim2.fromScale(1, 1)
+									__deobf_slots5.v678_3.BackgroundTransparency = 1
+									__deobf_slots5.v678_3.Font = Enum.Font.Gotham
+									__deobf_slots5.v678_3.Text = "translated preview appears here…"
+									__deobf_slots5.v678_3.TextSize = 11
+									__deobf_slots5.v678_3.TextColor3 = __deobf_slots4.v442_5.OFF_TEXT
+									__deobf_slots5.v678_3.TextXAlignment = Enum.TextXAlignment.Left
+									__deobf_slots5.v678_3.TextYAlignment = Enum.TextYAlignment.Top
+									__deobf_slots5.v678_4 = ""
+									local instance4 = Instance.new("Frame", instance3)
+									instance4.Size = UDim2.new(1, 0, 0, 32)
+									instance4.Position = UDim2.fromOffset(0, 96)
+									instance4.BackgroundTransparency = 1
+									do
+										local uiListLayout = Instance.new("UIListLayout", instance4)
+										uiListLayout.FillDirection = Enum.FillDirection.Horizontal
+										uiListLayout.Padding = UDim.new(0, 6)
+										uiListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+									end
+									local v72 = __deobf_slots4.v618_5(instance4, "TRANSLATE", { textSize = 12 })
 									v72.Size = UDim2.new(0.4, -4, 1, 0)
 									v72.LayoutOrder = 1
-									local v73 = __deobf_slots4.v618_5(instance2, "COPY", { color = __deobf_slots4.v442_5.SURF2, press = __deobf_slots4.v442_5.ACCENT2, stroke = __deobf_slots4.v442_5.STROKE, strokeT = 0.5, textSize = 10 })
+									local v73 = __deobf_slots4.v618_5(instance4, "COPY", { color = __deobf_slots4.v442_5.SURF2, press = __deobf_slots4.v442_5.ACCENT2, stroke = __deobf_slots4.v442_5.STROKE, strokeT = 0.5, textSize = 10 })
 									v73.Size = UDim2.new(0.3, -4, 1, 0)
 									v73.LayoutOrder = 2
-									local v74 = __deobf_slots4.v618_5(instance2, "SEND", { textSize = 12 })
+									local v74 = __deobf_slots4.v618_5(instance4, "SEND", { textSize = 12 })
 									v74.Size = UDim2.new(0.3, -4, 1, 0)
 									v74.LayoutOrder = 3
-
 									v72.MouseButton1Click:Connect(function()
 										local text = __deobf_slots5.v677_10.Text
 										if text == "" then return end
@@ -2247,9 +2055,7 @@ local function initializeRecoveredPanel()
 										task.spawn(function()
 											local flag12 = __deobf_slots4.v442_6.theirLang and __deobf_slots4.v442_6.theirLang ~= "" and __deobf_slots4.v442_6.theirLang ~= "auto"
 											local v75 = text
-											if flag12 then
-												v75 = __deobf_slots4.v546_8(text, __deobf_slots4.v442_6.theirLang, __deobf_slots4.v442_6.myLang) or text
-											end
+											if flag12 then v75 = __deobf_slots4.v546_8(text, __deobf_slots4.v442_6.theirLang, __deobf_slots4.v442_6.myLang) or text end
 											__deobf_slots5.v678_4 = v75
 											__deobf_slots5.v678_3.Visible = false
 											__deobf_slots5.v678_2.Visible = true
@@ -2257,7 +2063,6 @@ local function initializeRecoveredPanel()
 											v72.Text = "TRANSLATE"
 										end)
 									end)
-
 									v73.MouseButton1Click:Connect(function()
 										local v6784 = __deobf_slots5.v678_4 ~= "" and __deobf_slots5.v678_4 or __deobf_slots5.v677_10.Text
 										if v6784 == "" then return end
@@ -2265,7 +2070,6 @@ local function initializeRecoveredPanel()
 										v73.Text = "OK"
 										task.delay(1, function() if v73.Parent then v73.Text = "COPY" end end)
 									end)
-
 									v74.MouseButton1Click:Connect(function()
 										local v6784 = __deobf_slots5.v678_4 ~= "" and __deobf_slots5.v678_4 or __deobf_slots5.v677_10.Text
 										if v6784 == "" then return end
@@ -2285,218 +2089,189 @@ local function initializeRecoveredPanel()
 									end)
 								end
 							end
-						end
 
-						do
-							local textBox, v72, instance2
 							do
+								local textBox, v72, instance2
 								do
-									do
-										local frame = Instance.new("Frame", __deobf_slots5.v677_2)
-										frame.Size = UDim2.fromScale(1, 1)
-										frame.BackgroundTransparency = 1
-										frame.Visible = false
-										__deobf_slots5.v677_1.presets = frame
-										textBox = Instance.new("TextBox", frame)
-										textBox.Size = UDim2.new(1, 0, 0, 42)
-										textBox.Position = UDim2.fromOffset(0, 0)
-										textBox.BackgroundColor3 = __deobf_slots4.v442_5.SURF
-										textBox.Text = ""
-										textBox.PlaceholderText = "write a preset message…"
-										textBox.PlaceholderColor3 = __deobf_slots4.v442_5.OFF_TEXT
-										textBox.Font = Enum.Font.Gotham
-										textBox.TextSize = 12
-										textBox.TextColor3 = __deobf_slots4.v442_5.TEXT
-										textBox.TextWrapped = true
-										textBox.TextXAlignment = Enum.TextXAlignment.Left
-										textBox.TextYAlignment = Enum.TextYAlignment.Top
-										textBox.ClearTextOnFocus = false
-										__deobf_slots4.v618_1(textBox, 10)
-										__deobf_slots4.v618_2(textBox, __deobf_slots4.v442_5.STROKE, 1, 0.55)
-										local uiPadding = Instance.new("UIPadding", textBox)
-										uiPadding.PaddingLeft = UDim.new(0, 10)
-										uiPadding.PaddingTop = UDim.new(0, 6)
-										uiPadding.PaddingRight = UDim.new(0, 10)
-										v72 = __deobf_slots4.v618_5(frame, "+ ADD PRESET", { textSize = 10 })
-										v72.Size = UDim2.new(1, 0, 0, 28)
-										v72.Position = UDim2.fromOffset(0, 48)
-										instance2 = Instance.new("ScrollingFrame", frame)
-									end
-								end
-
-								instance2.Size = UDim2.new(1, 0, 1, -86)
-								instance2.Position = UDim2.fromOffset(0, 84)
-								instance2.BackgroundTransparency = 1
-								instance2.BorderSizePixel = 0
-								instance2.ScrollBarThickness = 4
-								instance2.ScrollBarImageColor3 = __deobf_slots4.v442_5.ACCENT
-								instance2.CanvasSize = UDim2.new(0, 0, 0, 0)
-								instance2.AutomaticCanvasSize = Enum.AutomaticSize.Y
-								do
-									local instance3 = Instance.new("UIPadding", instance2)
-									instance3.PaddingRight = UDim.new(0, 8)
-									instance3.PaddingTop = UDim.new(0, 1)
-								end
-							end
-							do
-								local instance3 = Instance.new("UIListLayout", instance2)
-								instance3.Padding = UDim.new(0, 8)
-								instance3.SortOrder = Enum.SortOrder.LayoutOrder
-							end
-
-							do
-								local v73 = nil
-								local fn26 = nil
-								fn26 = function()
-									for _, child in ipairs(instance2:GetChildren()) do
-										if child:IsA("Frame") then child:Destroy() end
-									end
-									for i, preset in ipairs(__deobf_slots4.v442_6.presets) do
-										local frame = Instance.new("Frame", instance2)
-										frame.Size = UDim2.new(1, 0, 0, 64)
-										frame.BackgroundColor3 = __deobf_slots4.v442_5.SURF
-										frame.BorderSizePixel = 0
-										frame.LayoutOrder = i
-										__deobf_slots4.v618_1(frame, 11)
-										__deobf_slots4.v618_2(frame, __deobf_slots4.v442_5.STROKE, 1, 0.55)
-										local frame2 = Instance.new("Frame", frame)
-										frame2.Size = UDim2.new(1, -20, 1, -16)
-										frame2.Position = UDim2.fromOffset(10, 8)
-										frame2.BackgroundTransparency = 1
-										local textLabel = Instance.new("TextLabel", frame2)
-										textLabel.Size = UDim2.new(1, 0, 0, 22)
-										textLabel.BackgroundTransparency = 1
-										textLabel.Font = Enum.Font.GothamMedium
-										textLabel.Text = preset
-										textLabel.TextSize = 11
-										textLabel.TextColor3 = __deobf_slots4.v442_5.TEXT
-										textLabel.TextXAlignment = Enum.TextXAlignment.Left
-										textLabel.TextTruncate = Enum.TextTruncate.AtEnd
-										local frame3 = Instance.new("Frame", frame2)
-										frame3.Size = UDim2.new(1, 0, 0, 20)
-										frame3.Position = UDim2.new(0, 0, 1, -20)
-										frame3.BackgroundTransparency = 1
-										local uiListLayout = Instance.new("UIListLayout", frame3)
-										uiListLayout.FillDirection = Enum.FillDirection.Horizontal
-										uiListLayout.Padding = UDim.new(0, 6)
-										uiListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-
-										local function fn27(arg, layoutOrder, arg2)
-											local tbl11 = arg2 or { color = __deobf_slots4.v442_5.SURF2, press = __deobf_slots4.v442_5.ACCENT2, stroke = __deobf_slots4.v442_5.STROKE, strokeT = 0.5 }
-											local v74 = __deobf_slots4.v618_5(frame3, arg, {
-												color = tbl11.color,
-												press = tbl11.press,
-												stroke = tbl11.stroke,
-												strokeT = tbl11.strokeT,
-												radius = 6,
-												textSize = 10,
-											})
-											v74.Size = UDim2.new(0.25, -4.5, 1, 0)
-											v74.LayoutOrder = layoutOrder
-											return v74
-										end
-
-										local send = fn27("SEND", 1, { color = __deobf_slots4.v442_5.ACCENT2, press = __deobf_slots4.v442_5.ACCENT, stroke = __deobf_slots4.v442_5.ACCENT, strokeT = 0.35 })
-										local copy = fn27("COPY", 2)
-										local edit = fn27("EDIT", 3)
-										local del = fn27("DEL", 4, { color = Color3.fromRGB(64, 22, 22), press = Color3.fromRGB(96, 32, 32), stroke = Color3.fromRGB(140, 48, 48), strokeT = 0.4 })
-
-										send.MouseButton1Click:Connect(function()
-											task.spawn(function()
-												local flag12 = __deobf_slots4.v442_6.theirLang and __deobf_slots4.v442_6.theirLang ~= "" and __deobf_slots4.v442_6.theirLang ~= "auto" and __deobf_slots4.v442_6.theirLang ~= __deobf_slots4.v442_6.myLang
-												local v74 = preset
-												if flag12 then
-													v74 = __deobf_slots4.v546_8(preset, __deobf_slots4.v442_6.theirLang, __deobf_slots4.v442_6.myLang)
-													local flag13 = v74 and v74 ~= ""
-													local v75 = preset
-													if not flag13 then v74 = v75 end
-												end
-												if not v74 or v74 == "" then v74 = preset end
-												send.Text = __deobf_slots4.v546_6(v74) and "SENT" or "FAIL"
-												task.delay(1, function() if send.Parent then send.Text = "SEND" end end)
-											end)
-										end)
-
-										copy.MouseButton1Click:Connect(function()
-											pcall(function() __deobf_slots4.v442_4(preset) end)
-											copy.Text = "OK"
-											task.delay(1, function() if copy.Parent then copy.Text = "COPY" end end)
-										end)
-
-										edit.MouseButton1Click:Connect(function()
-											textBox.Text = preset
-											v73 = i
-											v72.Text = "SAVE EDIT"
-										end)
-
-										del.MouseButton1Click:Connect(function()
-											table.remove(__deobf_slots4.v442_6.presets, i)
-											__deobf_slots4.v442_7()
-											fn26()
-										end)
-									end
-								end
-
-								v72.MouseButton1Click:Connect(function()
-									local text = textBox.Text
-									if text == "" then return end
-									if v73 then
-										__deobf_slots4.v442_6.presets[v73] = text
-										v73 = nil
-										v72.Text = "+ ADD PRESET"
-									else
-										table.insert(__deobf_slots4.v442_6.presets, text)
-									end
+									local frame = Instance.new("Frame", __deobf_slots5.v677_2)
+									frame.Size = UDim2.fromScale(1, 1)
+									frame.BackgroundTransparency = 1
+									frame.Visible = false
+									__deobf_slots5.v677_1.presets = frame
+									textBox = Instance.new("TextBox", frame)
+									textBox.Size = UDim2.new(1, 0, 0, 42)
+									textBox.Position = UDim2.fromOffset(0, 0)
+									textBox.BackgroundColor3 = __deobf_slots4.v442_5.SURF
 									textBox.Text = ""
-									__deobf_slots4.v442_7()
+									textBox.PlaceholderText = "write a preset message…"
+									textBox.PlaceholderColor3 = __deobf_slots4.v442_5.OFF_TEXT
+									textBox.Font = Enum.Font.Gotham
+									textBox.TextSize = 12
+									textBox.TextColor3 = __deobf_slots4.v442_5.TEXT
+									textBox.TextWrapped = true
+									textBox.TextXAlignment = Enum.TextXAlignment.Left
+									textBox.TextYAlignment = Enum.TextYAlignment.Top
+									textBox.ClearTextOnFocus = false
+									__deobf_slots4.v618_1(textBox, 10)
+									__deobf_slots4.v618_2(textBox, __deobf_slots4.v442_5.STROKE, 1, 0.55)
+									local uiPadding = Instance.new("UIPadding", textBox)
+									uiPadding.PaddingLeft = UDim.new(0, 10)
+									uiPadding.PaddingTop = UDim.new(0, 6)
+									uiPadding.PaddingRight = UDim.new(0, 10)
+									v72 = __deobf_slots4.v618_5(frame, "+ ADD PRESET", { textSize = 10 })
+									v72.Size = UDim2.new(1, 0, 0, 28)
+									v72.Position = UDim2.fromOffset(0, 48)
+									instance2 = Instance.new("ScrollingFrame", frame)
+									instance2.Size = UDim2.new(1, 0, 1, -86)
+									instance2.Position = UDim2.fromOffset(0, 84)
+									instance2.BackgroundTransparency = 1
+									instance2.BorderSizePixel = 0
+									instance2.ScrollBarThickness = 4
+									instance2.ScrollBarImageColor3 = __deobf_slots4.v442_5.ACCENT
+									instance2.CanvasSize = UDim2.new(0, 0, 0, 0)
+									instance2.AutomaticCanvasSize = Enum.AutomaticSize.Y
+									do
+										local instance3 = Instance.new("UIPadding", instance2)
+										instance3.PaddingRight = UDim.new(0, 8)
+										instance3.PaddingTop = UDim.new(0, 1)
+									end
+									do
+										local instance3 = Instance.new("UIListLayout", instance2)
+										instance3.Padding = UDim.new(0, 8)
+										instance3.SortOrder = Enum.SortOrder.LayoutOrder
+									end
+								end
+								do
+									local v73 = nil
+									local fn26 = nil
+									fn26 = function()
+										for _, child in ipairs(instance2:GetChildren()) do
+											if child:IsA("Frame") then child:Destroy() end
+										end
+										for i, preset in ipairs(__deobf_slots4.v442_6.presets) do
+											local frame = Instance.new("Frame", instance2)
+											frame.Size = UDim2.new(1, 0, 0, 64)
+											frame.BackgroundColor3 = __deobf_slots4.v442_5.SURF
+											frame.BorderSizePixel = 0
+											frame.LayoutOrder = i
+											__deobf_slots4.v618_1(frame, 11)
+											__deobf_slots4.v618_2(frame, __deobf_slots4.v442_5.STROKE, 1, 0.55)
+											local frame2 = Instance.new("Frame", frame)
+											frame2.Size = UDim2.new(1, -20, 1, -16)
+											frame2.Position = UDim2.fromOffset(10, 8)
+											frame2.BackgroundTransparency = 1
+											local textLabel = Instance.new("TextLabel", frame2)
+											textLabel.Size = UDim2.new(1, 0, 0, 22)
+											textLabel.BackgroundTransparency = 1
+											textLabel.Font = Enum.Font.GothamMedium
+											textLabel.Text = preset
+											textLabel.TextSize = 11
+											textLabel.TextColor3 = __deobf_slots4.v442_5.TEXT
+											textLabel.TextXAlignment = Enum.TextXAlignment.Left
+											textLabel.TextTruncate = Enum.TextTruncate.AtEnd
+											local frame3 = Instance.new("Frame", frame2)
+											frame3.Size = UDim2.new(1, 0, 0, 20)
+											frame3.Position = UDim2.new(0, 0, 1, -20)
+											frame3.BackgroundTransparency = 1
+											local uiListLayout = Instance.new("UIListLayout", frame3)
+											uiListLayout.FillDirection = Enum.FillDirection.Horizontal
+											uiListLayout.Padding = UDim.new(0, 6)
+											uiListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+											local function fn27(arg, layoutOrder, arg2)
+												local tbl11 = arg2 or { color = __deobf_slots4.v442_5.SURF2, press = __deobf_slots4.v442_5.ACCENT2, stroke = __deobf_slots4.v442_5.STROKE, strokeT = 0.5 }
+												local v74 = __deobf_slots4.v618_5(frame3, arg, {
+													color = tbl11.color, press = tbl11.press,
+													stroke = tbl11.stroke, strokeT = tbl11.strokeT,
+													radius = 6, textSize = 10,
+												})
+												v74.Size = UDim2.new(0.25, -4.5, 1, 0)
+												v74.LayoutOrder = layoutOrder
+												return v74
+											end
+											local send = fn27("SEND", 1, { color = __deobf_slots4.v442_5.ACCENT2, press = __deobf_slots4.v442_5.ACCENT, stroke = __deobf_slots4.v442_5.ACCENT, strokeT = 0.35 })
+											local copy = fn27("COPY", 2)
+											local edit = fn27("EDIT", 3)
+											local del = fn27("DEL", 4, { color = Color3.fromRGB(64, 22, 22), press = Color3.fromRGB(96, 32, 32), stroke = Color3.fromRGB(140, 48, 48), strokeT = 0.4 })
+											send.MouseButton1Click:Connect(function()
+												task.spawn(function()
+													local flag12 = __deobf_slots4.v442_6.theirLang and __deobf_slots4.v442_6.theirLang ~= "" and __deobf_slots4.v442_6.theirLang ~= "auto" and __deobf_slots4.v442_6.theirLang ~= __deobf_slots4.v442_6.myLang
+													local v74 = preset
+													if flag12 then
+														v74 = __deobf_slots4.v546_8(preset, __deobf_slots4.v442_6.theirLang, __deobf_slots4.v442_6.myLang)
+														if not (v74 and v74 ~= "") then v74 = preset end
+													end
+													if not v74 or v74 == "" then v74 = preset end
+													send.Text = __deobf_slots4.v546_6(v74) and "SENT" or "FAIL"
+													task.delay(1, function() if send.Parent then send.Text = "SEND" end end)
+												end)
+											end)
+											copy.MouseButton1Click:Connect(function()
+												pcall(function() __deobf_slots4.v442_4(preset) end)
+												copy.Text = "OK"
+												task.delay(1, function() if copy.Parent then copy.Text = "COPY" end end)
+											end)
+											edit.MouseButton1Click:Connect(function()
+												textBox.Text = preset
+												v73 = i
+												v72.Text = "SAVE EDIT"
+											end)
+											del.MouseButton1Click:Connect(function()
+												table.remove(__deobf_slots4.v442_6.presets, i)
+												__deobf_slots4.v442_7()
+												fn26()
+											end)
+										end
+									end
+									v72.MouseButton1Click:Connect(function()
+										local text = textBox.Text
+										if text == "" then return end
+										if v73 then
+											__deobf_slots4.v442_6.presets[v73] = text
+											v73 = nil
+											v72.Text = "+ ADD PRESET"
+										else
+											table.insert(__deobf_slots4.v442_6.presets, text)
+										end
+										textBox.Text = ""
+										__deobf_slots4.v442_7()
+										fn26()
+									end)
 									fn26()
-								end)
-
-								fn26()
+								end
 							end
+
+							fn25("list")
 						end
 
-						fn25("list")
-					end
-
-					__deobf_slots5.v825_1, __deobf_slots5.v825_2, __deobf_slots5.v825_3, __deobf_slots5.v825_4, __deobf_slots5.v825_5 = nil
-
-					do
+						__deobf_slots5.v825_1, __deobf_slots5.v825_2, __deobf_slots5.v825_3, __deobf_slots5.v825_4, __deobf_slots5.v825_5 = nil
 						do
 							local scrollingFrame
 							do
 								local fn25, createTextButton
 								do
+									local frame = Instance.new("Frame", __deobf_slots5.v677_2)
+									frame.Size = UDim2.fromScale(1, 1)
+									frame.BackgroundTransparency = 1
+									frame.Visible = false
+									__deobf_slots5.v677_1.settings = frame
+									scrollingFrame = Instance.new("ScrollingFrame", frame)
+									scrollingFrame.Size = UDim2.fromScale(1, 1)
+									scrollingFrame.BackgroundTransparency = 1
+									scrollingFrame.BorderSizePixel = 0
+									scrollingFrame.ScrollBarThickness = 4
+									scrollingFrame.ScrollBarImageColor3 = __deobf_slots4.v442_5.ACCENT
+									scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+									scrollingFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 									do
-										do
-											do
-												local frame = Instance.new("Frame", __deobf_slots5.v677_2)
-												frame.Size = UDim2.fromScale(1, 1)
-												frame.BackgroundTransparency = 1
-												frame.Visible = false
-												__deobf_slots5.v677_1.settings = frame
-												scrollingFrame = Instance.new("ScrollingFrame", frame)
-											end
-										end
-										scrollingFrame.Size = UDim2.fromScale(1, 1)
-										scrollingFrame.BackgroundTransparency = 1
-										scrollingFrame.BorderSizePixel = 0
-										scrollingFrame.ScrollBarThickness = 4
-										scrollingFrame.ScrollBarImageColor3 = __deobf_slots4.v442_5.ACCENT
-										scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-										scrollingFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
-										do
-											local uiPadding = Instance.new("UIPadding", scrollingFrame)
-											uiPadding.PaddingRight = UDim.new(0, 6)
-											uiPadding.PaddingBottom = UDim.new(0, 12)
-										end
+										local uiPadding = Instance.new("UIPadding", scrollingFrame)
+										uiPadding.PaddingRight = UDim.new(0, 6)
+										uiPadding.PaddingBottom = UDim.new(0, 12)
 									end
 									do
 										local uiListLayout = Instance.new("UIListLayout", scrollingFrame)
 										uiListLayout.Padding = UDim.new(0, 7)
 										uiListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 									end
-
 									fn25 = function(text, layoutOrder, arg)
 										local frame = Instance.new("Frame", scrollingFrame)
 										frame.Size = UDim2.new(1, 0, 0, arg and 24 or 34)
@@ -2518,7 +2293,6 @@ local function initializeRecoveredPanel()
 										frame2.BackgroundTransparency = 0.6
 										frame2.BorderSizePixel = 0
 									end
-
 									createTextButton = function(text, arg, layoutOrder, arg2)
 										local textButton = Instance.new("TextButton", scrollingFrame)
 										textButton.Size = UDim2.new(1, 0, 0, 36)
@@ -2563,13 +2337,11 @@ local function initializeRecoveredPanel()
 										end)
 										return textButton
 									end
-
 									fn25("SAFETY", 0, true)
 									createTextButton("Confirm before sending trade", "requireTradeConfirm", 1)
 									createTextButton("Confirm before auto-hop", "requireHopConfirm", 2)
 									fn25("SERVER HOPPING", 10, true)
 									createTextButton("Auto-hop until priority", "autoHop", 11)
-
 									do
 										local textLabel = Instance.new("TextLabel", scrollingFrame)
 										textLabel.Size = UDim2.new(1, 0, 0, 14)
@@ -2582,22 +2354,17 @@ local function initializeRecoveredPanel()
 										textLabel.TextXAlignment = Enum.TextXAlignment.Left
 									end
 								end
-
 								do
-									local instance2
+									local instance2 = Instance.new("Frame", scrollingFrame)
+									instance2.Size = UDim2.new(1, 0, 0, 30)
+									instance2.LayoutOrder = 13
+									instance2.BackgroundTransparency = 1
 									do
-										instance2 = Instance.new("Frame", scrollingFrame)
-										instance2.Size = UDim2.new(1, 0, 0, 30)
-										instance2.LayoutOrder = 13
-										instance2.BackgroundTransparency = 1
-										do
-											local uiListLayout = Instance.new("UIListLayout", instance2)
-											uiListLayout.FillDirection = Enum.FillDirection.Horizontal
-											uiListLayout.Padding = UDim.new(0, 6)
-											uiListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-										end
+										local uiListLayout = Instance.new("UIListLayout", instance2)
+										uiListLayout.FillDirection = Enum.FillDirection.Horizontal
+										uiListLayout.Padding = UDim.new(0, 6)
+										uiListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 									end
-
 									local tbl11 = {}
 									for i, v72 in ipairs({ "Normal", "Pro", "OG" }) do
 										local textButton = Instance.new("TextButton", instance2)
@@ -2624,7 +2391,6 @@ local function initializeRecoveredPanel()
 										end)
 									end
 								end
-
 								do
 									local v72 = __deobf_slots4.v618_5(scrollingFrame, "HOP NOW", { textSize = 12 })
 									v72.Size = UDim2.new(1, 0, 0, 34)
@@ -2633,7 +2399,6 @@ local function initializeRecoveredPanel()
 										__deobf_slots4.v618_10(__deobf_slots4.v442_6.hopTier)
 									end)
 								end
-
 								fn25("ALERTS", 20, true)
 								createTextButton("Alert sound on priority", "alertSound", 21)
 								fn25("DISPLAY", 30, true)
@@ -2641,7 +2406,6 @@ local function initializeRecoveredPanel()
 								createTextButton("Beam to trader's base", "beamToBase", 32)
 								fn25("PRIORITY BRAINROTS", 40, true)
 							end
-
 							local textBox, frame, fn25, fn26
 							do
 								textBox = Instance.new("TextBox", scrollingFrame)
@@ -2665,7 +2429,6 @@ local function initializeRecoveredPanel()
 								frame.BackgroundTransparency = 1
 								frame.AutomaticSize = Enum.AutomaticSize.Y
 								Instance.new("UIListLayout", frame).Padding = UDim.new(0, 4)
-
 								do
 									local instance2 = Instance.new("TextLabel", scrollingFrame)
 									instance2.Size = UDim2.new(1, 0, 0, 16)
@@ -2682,15 +2445,12 @@ local function initializeRecoveredPanel()
 									frame2.BackgroundTransparency = 1
 									frame2.AutomaticSize = Enum.AutomaticSize.Y
 									Instance.new("UIListLayout", frame2).Padding = UDim.new(0, 4)
-
 									fn25 = function(arg)
 										for _, v72 in ipairs(__deobf_slots4.v442_6.priorityList) do
 											if v72 == arg then return true end
 										end
 										return false
 									end
-
-									fn26 = nil
 									fn26 = function()
 										instance2.Text = "YOUR LIST  (" .. #__deobf_slots4.v442_6.priorityList .. ")"
 										for _, child in ipairs(frame2:GetChildren()) do
@@ -2731,10 +2491,8 @@ local function initializeRecoveredPanel()
 									end
 								end
 							end
-
 							do
-								local fn27 = nil
-								fn27 = function()
+								local fn27 = function()
 									for _, child in ipairs(frame:GetChildren()) do
 										if child:IsA("TextButton") then child:Destroy() end
 									end
@@ -2775,7 +2533,6 @@ local function initializeRecoveredPanel()
 								end
 								textBox:GetPropertyChangedSignal("Text"):Connect(fn27)
 							end
-
 							fn26()
 						end
 
@@ -2810,9 +2567,7 @@ local function initializeRecoveredPanel()
 												continue
 											end
 										else
-											if __deobf_slots4.v442_6.autoHop and not confirmed then
-												confirmed = true
-											end
+											if __deobf_slots4.v442_6.autoHop and not confirmed then confirmed = true end
 											task.wait(3)
 											continue
 										end
@@ -2828,7 +2583,6 @@ local function initializeRecoveredPanel()
 								local playerGui = __deobf_slots4.v441_8:WaitForChild("PlayerGui", 30)
 								if not playerGui then return end
 								local userId = __deobf_slots4.v441_8.UserId
-
 								local function fn25(arg)
 									local playerImage = arg:FindFirstChild("PlayerImage")
 									playerImage = playerImage and playerImage:FindFirstChild("Headshot")
@@ -2839,13 +2593,9 @@ local function initializeRecoveredPanel()
 									end
 									return true
 								end
-
 								local tbl11 = {}
 								local function fn26(arg, arg2)
-									if __deobf_slots5.v677_7 then
-										tbl11 = {}
-										__deobf_slots5.v677_7 = false
-									end
+									if __deobf_slots5.v677_7 then tbl11 = {} __deobf_slots5.v677_7 = false end
 									if not arg or arg == "auto" or arg == "" then return end
 									tbl11[arg] = (tbl11[arg] or 0) + arg2
 									local n21 = 0
@@ -2864,7 +2614,6 @@ local function initializeRecoveredPanel()
 										__deobf_slots4.v442_7()
 									end
 								end
-
 								local function fn27(arg)
 									if type(arg) ~= "string" or #arg < 2 or arg == "Template" then return end
 									if not __deobf_slots4.v442_1() or not __deobf_slots4.v442_6.translatorOn then return end
@@ -2877,11 +2626,7 @@ local function initializeRecoveredPanel()
 										__deobf_slots5.v677_9(arg, v72 and v72 ~= arg and v72 or arg)
 									end)
 								end
-
-								local function fn28(arg)
-									return arg:IsA("Frame") and arg.Name:find("^Message")
-								end
-
+								local function fn28(arg) return arg:IsA("Frame") and arg.Name:find("^Message") end
 								local function fn29(arg)
 									local tbl12 = {}
 									for _, child in ipairs(arg:GetChildren()) do
@@ -2898,15 +2643,11 @@ local function initializeRecoveredPanel()
 									end
 									return tbl13
 								end
-
 								local function fn30(arg)
 									local n21 = 0
 									local function fn31()
 										local v72 = fn29(arg)
-										if #v72 < n21 then
-											n21 = 0
-											__deobf_slots5.v677_6 = 0
-										end
+										if #v72 < n21 then n21 = 0 __deobf_slots5.v677_6 = 0 end
 										for i = n21 + 1, #v72 do
 											local v73 = v72[i]
 											if v73.theirs then fn27(v73.text) end
@@ -2922,7 +2663,6 @@ local function initializeRecoveredPanel()
 										end)
 									end)
 								end
-
 								local function fn31(arg)
 									task.spawn(function()
 										local tradeLiveTrade = arg:WaitForChild("TradeLiveTrade", 5) or arg
@@ -2946,7 +2686,6 @@ local function initializeRecoveredPanel()
 										end
 									end)
 								end
-
 								local tradeLiveTrade = playerGui:FindFirstChild("TradeLiveTrade")
 								if tradeLiveTrade then fn31(tradeLiveTrade) end
 								playerGui.ChildAdded:Connect(function(child)
@@ -2958,7 +2697,6 @@ local function initializeRecoveredPanel()
 						end
 
 						__deobf_slots5.v825_1 = nil
-
 						do
 							local screenGui2 = Instance.new("ScreenGui")
 							screenGui2.Name = "GuestConvincerBase"
@@ -2990,7 +2728,6 @@ local function initializeRecoveredPanel()
 							__deobf_slots5.v825_3 = v8253 or 1
 						end
 					end
-
 					do
 						Instance.new("UIScale", __deobf_slots5.v825_2).Scale = __deobf_slots5.v825_3
 						local frame = Instance.new("Frame", __deobf_slots5.v825_2)
@@ -3017,21 +2754,12 @@ local function initializeRecoveredPanel()
 							__deobf_slots4.v618_1(instance2, 1)
 						end
 					end
-
 					do
-						local v72 = __deobf_slots4.v618_5(__deobf_slots5.v825_2, "X", {
-							color = __deobf_slots4.v442_5.SURF2,
-							press = __deobf_slots4.v442_5.ACCENT2,
-							stroke = __deobf_slots4.v442_5.STROKE,
-							strokeT = 0.5,
-							textSize = 13,
-						})
+						local v72 = __deobf_slots4.v618_5(__deobf_slots5.v825_2, "X", { color = __deobf_slots4.v442_5.SURF2, press = __deobf_slots4.v442_5.ACCENT2, stroke = __deobf_slots4.v442_5.STROKE, strokeT = 0.5, textSize = 13 })
 						v72.Size = UDim2.fromOffset(36, 36)
 						v72.Position = UDim2.new(1, -46, 0, 8)
 						v72.ZIndex = 61
-						v72.MouseButton1Click:Connect(function()
-							__deobf_slots5.v825_2.Visible = false
-						end)
+						v72.MouseButton1Click:Connect(function() __deobf_slots5.v825_2.Visible = false end)
 					end
 				end
 
@@ -3056,7 +2784,6 @@ local function initializeRecoveredPanel()
 								uiListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 							end
 						end
-
 						do
 							tbl11 = {}
 							do
@@ -3081,7 +2808,6 @@ local function initializeRecoveredPanel()
 							end
 						end
 					end
-
 					local front = tbl11.front
 					if front then
 						front.BackgroundColor3 = __deobf_slots4.v442_5.ACCENT2
@@ -3121,7 +2847,6 @@ local function initializeRecoveredPanel()
 
 			__deobf_slots5.v907_1, __deobf_slots5.v907_2, __deobf_slots5.v907_3, __deobf_slots5.v907_4, __deobf_slots5.v907_5, __deobf_slots5.v907_6, __deobf_slots5.v907_7, __deobf_slots5.v907_8, __deobf_slots5.v907_9, __deobf_slots5.v907_10 = nil
 			local flag12, flag13, v72, fn25, fn26
-
 			do
 				do
 					local viewportFrame, textLabel
@@ -3145,7 +2870,6 @@ local function initializeRecoveredPanel()
 								uiGradient.Rotation = 90
 							end
 						end
-
 						viewportFrame = Instance.new("ViewportFrame", __deobf_slots5.v907_1)
 						viewportFrame.Size = UDim2.fromScale(1, 1)
 						viewportFrame.BackgroundTransparency = 1
@@ -3175,7 +2899,6 @@ local function initializeRecoveredPanel()
 						__deobf_slots4.v618_1(textLabel, 9)
 						__deobf_slots4.v618_2(textLabel, __deobf_slots4.v442_5.ACCENT, 1.4, 0.3)
 					end
-
 					do
 						local frame = Instance.new("Frame", __deobf_slots5.v825_2)
 						frame.Size = UDim2.new(0, 10, 1, -110)
@@ -3193,21 +2916,12 @@ local function initializeRecoveredPanel()
 						instance2.BorderSizePixel = 0
 						instance2.ZIndex = 61
 						__deobf_slots4.v618_1(instance2, 5)
-
 						__deobf_slots5.v907_5 = {
-							slots = {},
-							floorsPresent = {},
-							selected = 1,
-							camPos = Vector3.new(0, 32, 8),
-							camTarget = Vector3.new(0, 4, -37),
-							plotInst = nil,
-							built = {},
-							labels = {},
-							animalList = {},
+							slots = {}, floorsPresent = {}, selected = 1,
+							camPos = Vector3.new(0, 32, 8), camTarget = Vector3.new(0, 4, -37),
+							plotInst = nil, built = {}, labels = {}, animalList = {},
 						}
-
 						__deobf_slots5.v907_6 = {}
-
 						local function fn27(arg, arg2)
 							local instance3 = Instance.new("TextButton", __deobf_slots5.v825_2)
 							instance3.Size = UDim2.fromOffset(26, 26)
@@ -3235,11 +2949,7 @@ local function initializeRecoveredPanel()
 							__deobf_slots5.v907_6[arg] = instance3
 							return instance3
 						end
-
-						fn27(3, 0.16)
-						fn27(2, 0.5)
-						fn27(1, 0.84)
-
+						fn27(3, 0.16) fn27(2, 0.5) fn27(1, 0.84)
 						__deobf_slots5.v907_7 = function(arg)
 							local n21 = #arg
 							if n21 <= 1 then
@@ -3270,7 +2980,6 @@ local function initializeRecoveredPanel()
 								if not flag14 then v73.Visible = false end
 							end
 						end
-
 						__deobf_slots5.v907_8 = function()
 							local presentList = __deobf_slots5.v907_5.presentList or {}
 							local n21 = #presentList
@@ -3284,13 +2993,11 @@ local function initializeRecoveredPanel()
 							__deobf_slots4.v618_3(instance2, 0.25, { Size = UDim2.new(1, 0, flag14 or n22 == 1 and 0.16 or n22 == 2 and 0.5 or 0.84, 0) })
 						end
 					end
-
 					__deobf_slots5.v907_9 = nil
 					__deobf_slots5.v907_10 = nil
 					flag12 = false
 					flag13 = false
 					v72 = nil
-
 					fn25 = function(arg)
 						local v9072 = __deobf_slots5.v907_2
 						__deobf_slots5.v907_2 = Instance.new("WorldModel")
@@ -3301,7 +3008,6 @@ local function initializeRecoveredPanel()
 								if child:IsA("Frame") then child:Destroy() end
 							end
 						end
-
 						local animalList = __deobf_slots5.v907_5.animalList or {}
 						local v73 = __deobf_slots4.v443_4[arg] or 0
 						local tbl11 = {}
@@ -3334,7 +3040,6 @@ local function initializeRecoveredPanel()
 							part.CFrame = CFrame.new(v75.pos.X, v75.pos.Y - n21, v75.pos.Z) * v75.rot
 							part.Parent = __deobf_slots5.v907_2
 						end
-
 						for k, v75 in pairs(__deobf_slots4.v443_2) do
 							if __deobf_slots4.v443_5(k) == arg then
 								local v76 = v75[4]
@@ -3389,26 +3094,18 @@ local function initializeRecoveredPanel()
 											n25 = (v80:GetPivot() * CFrame.new(0, n24, 0)).Position
 										end
 										__deobf_slots5.v907_5.labels[#__deobf_slots5.v907_5.labels + 1] = {
-											track = v80,
-											trackYOffset = n24,
-											trackAttachment = overheadAttachment,
-											world = n25,
-											kind = "overhead",
+											track = v80, trackYOffset = n24, trackAttachment = overheadAttachment,
+											world = n25, kind = "overhead",
 											name = __deobf_slots4.v546_1(index, v77.Traits),
 											gen = "$" .. __deobf_slots4.v444_2(__deobf_slots4.v443_9(index, mutation, v77.Traits)) .. "/s",
-											mutation = mutation,
-											rarity = str5,
-											rarityColor = color,
-											rarityGradient = gradientPreset,
-											rarityStroke = strokeColor,
-											index = index,
-											traits = v77.Traits,
+											mutation = mutation, rarity = str5, rarityColor = color,
+											rarityGradient = gradientPreset, rarityStroke = strokeColor,
+											index = index, traits = v77.Traits,
 										}
 									end
 								end
 							end
 						end
-
 						__deobf_slots5.v907_2.Parent = viewportFrame
 						if v9072 then
 							if flag12 then v72 = v9072
@@ -3418,14 +3115,11 @@ local function initializeRecoveredPanel()
 						if __deobf_slots5.v907_10 and not flag13 then __deobf_slots5.v907_10() end
 					end
 				end
-
 				fn26 = function()
 					__deobf_slots5.v907_3.CFrame = CFrame.lookAt(__deobf_slots5.v907_5.camPos, __deobf_slots5.v907_5.camTarget)
 					__deobf_slots5.v907_3.FieldOfView = 60
 					if __deobf_slots5.v907_9 then pcall(__deobf_slots5.v907_9) end
-					return
 				end
-
 				do
 					local tbl11 = {
 						front = { pos = Vector3.new(0, 31, 10), tgt = Vector3.new(0, 4, -37) },
@@ -3440,7 +3134,6 @@ local function initializeRecoveredPanel()
 					end
 				end
 			end
-
 			do
 				do
 					local tbl11 = {}
@@ -3487,16 +3180,7 @@ local function initializeRecoveredPanel()
 								if __deobf_slots4.v546_2 and __deobf_slots4.v444_7 and __deobf_slots4.v444_8 then
 									if not pcall(function()
 										local clone = __deobf_slots4.v546_2:Clone()
-										__deobf_slots4.v444_7:Populate({
-											Overhead = clone,
-											Index = label.index,
-											Traits = label.traits,
-											Mutation = label.mutation,
-											Player = __deobf_slots4.v441_8,
-											Trove = __deobf_slots4.v444_8.new(),
-											HidePrice = true,
-											HideRarity = false,
-										})
+										__deobf_slots4.v444_7:Populate({ Overhead = clone, Index = label.index, Traits = label.traits, Mutation = label.mutation, Player = __deobf_slots4.v441_8, Trove = __deobf_slots4.v444_8.new(), HidePrice = true, HideRarity = false })
 										local generation = clone:FindFirstChild("Generation", true)
 										if generation and generation:IsA("TextLabel") then
 											generation.Text = label.gen
@@ -3529,17 +3213,9 @@ local function initializeRecoveredPanel()
 									fn27(label.gen, 3, 14, Color3.fromRGB(255, 247, 0))
 								end
 							end
-							tbl11[#tbl11 + 1] = {
-								obj = frame,
-								world = label.world,
-								track = label.track,
-								trackYOffset = label.trackYOffset,
-								trackAttachment = label.trackAttachment,
-								baseSize = vector2 or Vector2.new(frame.Size.X.Offset, frame.Size.Y.Offset),
-							}
+							tbl11[#tbl11 + 1] = { obj = frame, world = label.world, track = label.track, trackYOffset = label.trackYOffset, trackAttachment = label.trackAttachment, baseSize = vector2 or Vector2.new(frame.Size.X.Offset, frame.Size.Y.Offset) }
 						end
 					end
-
 					local function fn27(arg, arg2, arg3, arg4)
 						if arg4.X < 1 or arg4.Y < 1 then return nil end
 						local v73 = arg2:PointToObjectSpace(arg)
@@ -3548,7 +3224,6 @@ local function initializeRecoveredPanel()
 						local v74 = math.tan(math.rad(arg3) / 2)
 						return Vector2.new((v73.X / -v73.Z / v74 * n21 * 0.5 + 0.5) * arg4.X, (1 - v73.Y / -v73.Z / v74 * 0.5 + 0.5) * arg4.Y), -v73.Z
 					end
-
 					__deobf_slots5.v907_9 = function()
 						pcall(function()
 							if #tbl11 == 0 then return end
@@ -3583,7 +3258,6 @@ local function initializeRecoveredPanel()
 						end)
 					end
 				end
-
 				__deobf_slots4.v441_6.InputChanged:Connect(function(input)
 					if not (__deobf_slots5.v825_2 and __deobf_slots5.v825_2.Visible) then return end
 					if input.UserInputType == Enum.UserInputType.MouseWheel then
@@ -3600,13 +3274,10 @@ local function initializeRecoveredPanel()
 						end
 					end
 				end)
-
 				__deobf_slots4.v441_4.RenderStepped:Connect(function()
 					if not (__deobf_slots5.v825_2 and __deobf_slots5.v825_2.Visible and __deobf_slots4.v442_1()) then return end
 					if __deobf_slots5.v907_9 then __deobf_slots5.v907_9() end
-					return
 				end)
-
 				do
 					local flag14 = false
 					local function fn27(selected)
@@ -3676,9 +3347,7 @@ local function initializeRecoveredPanel()
 						if animalPodiums then
 							for _, child in ipairs(animalPodiums:GetChildren()) do
 								local num = tonumber(child.Name)
-								if num then
-									__deobf_slots5.v907_5.floorsPresent[num <= 10 and 1 or num <= 18 and 2 or 3] = true
-								end
+								if num then __deobf_slots5.v907_5.floorsPresent[num <= 10 and 1 or num <= 18 and 2 or 3] = true end
 							end
 						end
 					end
@@ -3709,9 +3378,7 @@ local function initializeRecoveredPanel()
 					__deobf_slots5.v907_8()
 					__deobf_slots5.v825_2.Visible = true
 				end
-
 				v73 = nil
-
 				fn27 = function()
 					local playerGui = __deobf_slots4.v441_8:FindFirstChild("PlayerGui")
 					if not playerGui then return nil end
@@ -3725,7 +3392,6 @@ local function initializeRecoveredPanel()
 					end
 					return nil
 				end
-
 				local function fn29(arg, text, backgroundColor3, arg2)
 					arg.AutoButtonColor = false
 					arg.Image = ""
@@ -3751,32 +3417,25 @@ local function initializeRecoveredPanel()
 					local uiStroke = Instance.new("UIStroke", instance3)
 					uiStroke.Color = Color3.new(0, 0, 0)
 					uiStroke.Thickness = 1.2
-					arg.MouseButton1Down:Connect(function()
-						__deobf_slots4.v618_3(arg, 0.08, { BackgroundColor3 = arg2 })
-					end)
-					arg.MouseButton1Up:Connect(function()
-						__deobf_slots4.v618_3(arg, 0.12, { BackgroundColor3 = backgroundColor3 })
-					end)
+					arg.MouseButton1Down:Connect(function() __deobf_slots4.v618_3(arg, 0.08, { BackgroundColor3 = arg2 }) end)
+					arg.MouseButton1Up:Connect(function() __deobf_slots4.v618_3(arg, 0.12, { BackgroundColor3 = backgroundColor3 }) end)
 					return instance3
 				end
-
 				connection = nil
-
 				createImageButton = function()
+					warn("[GC] createImageButton fired, v73=" .. tostring(v73))
 					local playerGui = __deobf_slots4.v441_8:FindFirstChild("PlayerGui")
-					if not playerGui then return end
+					if not playerGui then warn("[GC] no PlayerGui") return end
 					local tradeLiveTrade = playerGui:FindFirstChild("TradeLiveTrade")
-					if not tradeLiveTrade then return end
+					if not tradeLiveTrade then warn("[GC] no TradeLiveTrade ScreenGui") return end
 					local tradeLiveTrade2 = tradeLiveTrade:FindFirstChild("TradeLiveTrade")
-					if not tradeLiveTrade2 then return end
+					if not tradeLiveTrade2 then warn("[GC] no TradeLiveTrade Frame") return end
 					local header = tradeLiveTrade2:FindFirstChild("Header")
-					if not header then return end
-
+					if not header then warn("[GC] no Header") return end
 					local guestShowBase = header:FindFirstChild("GuestShowBase")
 					if guestShowBase then guestShowBase:Destroy() end
 					local guestFriend = header:FindFirstChild("GuestFriend")
 					if guestFriend then guestFriend:Destroy() end
-
 					local baseColor, basePress = Color3.fromRGB(64, 120, 196), Color3.fromRGB(46, 92, 158)
 					local showBaseBtn = Instance.new("ImageButton", header)
 					showBaseBtn.Name = "GuestShowBase"
@@ -3785,22 +3444,15 @@ local function initializeRecoveredPanel()
 					showBaseBtn.Position = UDim2.new(0.775, 0, 0.5, 0)
 					showBaseBtn.ZIndex = (header.ZIndex or 1) + 5
 					fn29(showBaseBtn, "SHOW BASE", baseColor, basePress)
-
 					showBaseBtn.MouseButton1Click:Connect(function()
 						if not v73 then return end
-						if __deobf_slots5.v825_2.Visible then
-							__deobf_slots5.v825_2.Visible = false
-						else
-							fn28(v73)
-						end
+						if __deobf_slots5.v825_2.Visible then __deobf_slots5.v825_2.Visible = false else fn28(v73) end
 					end)
-
 					__deobf_slots5.v825_1 = showBaseBtn
-
 					local partnerName = v73
 					local partnerPlayer = partnerName and __deobf_slots4.v441_2:FindFirstChild(partnerName)
+					warn("[GC] partnerName=" .. tostring(partnerName) .. " partnerPlayer=" .. tostring(partnerPlayer))
 					if not partnerPlayer then return showBaseBtn end
-
 					local friendColor, friendPress = Color3.fromRGB(70, 170, 90), Color3.fromRGB(52, 130, 68)
 					local friendBtn = Instance.new("ImageButton", header)
 					friendBtn.Name = "GuestFriend"
@@ -3809,7 +3461,6 @@ local function initializeRecoveredPanel()
 					friendBtn.Position = UDim2.new(0.905, 0, 0.5, 0)
 					friendBtn.ZIndex = (header.ZIndex or 1) + 5
 					local friendLabel = fn29(friendBtn, "FRIEND", friendColor, friendPress)
-
 					local function reflectFriendStatus(status)
 						pcall(function()
 							if status == Enum.FriendStatus.Friend then
@@ -3829,40 +3480,26 @@ local function initializeRecoveredPanel()
 							end
 						end)
 					end
-
-					local ok, status = pcall(function()
-						return __deobf_slots4.v441_8:GetFriendStatus(partnerPlayer)
-					end)
+					local ok, status = pcall(function() return __deobf_slots4.v441_8:GetFriendStatus(partnerPlayer) end)
 					if ok then reflectFriendStatus(status) end
-
-					if connection then
-						pcall(function() connection:Disconnect() end)
-					end
+					if connection then pcall(function() connection:Disconnect() end) end
 					connection = __deobf_slots4.v441_8.FriendStatusChanged:Connect(function(changedPlayer, newStatus)
 						if changedPlayer == partnerPlayer and friendBtn and friendBtn.Parent then
 							reflectFriendStatus(newStatus)
 						end
 					end)
-
 					friendBtn.MouseButton1Click:Connect(function()
-						local ok2, current = pcall(function()
-							return __deobf_slots4.v441_8:GetFriendStatus(partnerPlayer)
-						end)
+						local ok2, current = pcall(function() return __deobf_slots4.v441_8:GetFriendStatus(partnerPlayer) end)
 						if ok2 and current == Enum.FriendStatus.Friend then return end
-						pcall(function()
-							__deobf_slots4.v441_8:RequestFriendship(partnerPlayer)
-						end)
+						pcall(function() __deobf_slots4.v441_8:RequestFriendship(partnerPlayer) end)
 					end)
-
 					return showBaseBtn
 				end
 			end
-
 			do
 				task.spawn(function()
 					local playerGui = __deobf_slots4.v441_8:WaitForChild("PlayerGui", 30)
 					if not playerGui then return end
-
 					local function fn29()
 						local tradeLiveTrade = playerGui:FindFirstChild("TradeLiveTrade")
 						if not tradeLiveTrade then return false end
@@ -3871,7 +3508,6 @@ local function initializeRecoveredPanel()
 						if tradeLiveTrade2 and tradeLiveTrade2:IsA("GuiObject") then return tradeLiveTrade2.Visible end
 						return tradeLiveTrade.Enabled
 					end
-
 					local flag14 = false
 					while screenGui.Parent and __deobf_slots4.v442_1() do
 						local v74 = fn29()
@@ -3904,7 +3540,6 @@ local function initializeRecoveredPanel()
 					end
 				end)
 			end
-
 			return
 		end
 	end
@@ -3915,11 +3550,9 @@ end
 
 local environment = type(getgenv) == "function" and getgenv() or _G
 local previousAddon = type(environment) == "table" and rawget(environment, "GuestConvincerV1")
-if type(previousAddon) == "table" and rawget(previousAddon, "Version") == "1.1.0" then
+if type(previousAddon) == "table" and rawget(previousAddon, "Version") == "1.2.0" then
     local destroy = rawget(previousAddon, "Destroy")
-    if type(destroy) == "function" then
-        pcall(destroy)
-    end
+    if type(destroy) == "function" then pcall(destroy) end
 end
 local featureOk, featureResult = pcall(initOriginalFeature)
 if not featureOk then
