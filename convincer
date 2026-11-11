@@ -1,7 +1,6 @@
--- GuestConvincer.lua
--- Rebrand of Slicedz Convincer. Theme: Midnight. Translator: Google only.
--- Removed: remote code stager, Supabase translate endpoint.
--- Kept: SEND TRADE (Slicedz single-click by default, confirm optional), 3D base viewer, auto-translate (fn30/fn31), hop, presets, header buttons.
+-- GuestConvincer.lua  v4.1.0
+-- Slicedz port | Midnight theme | Google-only translator
+-- Base viewer: 3D ViewportFrame with name / gen / rarity / mutation labels + idle animation
 
 local ENV = (type(getgenv) == "function" and getgenv()) or _G
 pcall(function() if type(ENV.GuestConvincerV1) == "table" and ENV.GuestConvincerV1.Version then ENV.GuestConvincerV1:Destroy() end end)
@@ -9,15 +8,14 @@ local Session = (rawget(ENV, "__GuestConvincerSession") or 0) + 1
 ENV.__GuestConvincerSession = Session
 local function alive() return rawget(ENV, "__GuestConvincerSession") == Session end
 
-local C = { VERSION="4.0.1", FOLDER="GuestConvincer", CFG="GuestConvincer/config.json", HOPS="GuestConvincer/hops.json", ALERT_ID="rbxassetid://6518811702" }
+local C = { VERSION="4.1.0", FOLDER="GuestConvincer", CFG="GuestConvincer/config.json", HOPS="GuestConvincer/hops.json", ALERT_ID="rbxassetid://6518811702" }
 
 local THEME = {
     BG=Color3.fromRGB(10,12,20), SURF=Color3.fromRGB(18,21,32), SURF2=Color3.fromRGB(26,30,44),
     TEXT=Color3.fromRGB(226,232,240), DIM=Color3.fromRGB(148,163,184),
     ACCENT=Color3.fromRGB(99,102,241), ACCENT2=Color3.fromRGB(79,70,229), STROKE=Color3.fromRGB(71,85,105),
-    GREEN1=Color3.fromRGB(22,101,52), GREEN2=Color3.fromRGB(34,197,94), GREEN_STROKE=Color3.fromRGB(74,222,128),
-    OFF_BG=Color3.fromRGB(51,65,85), OFF_TEXT=Color3.fromRGB(148,163,184),
-    BLUE=Color3.fromRGB(56,189,248), DANGER=Color3.fromRGB(239,68,68),
+    GREEN1=Color3.fromRGB(22,101,52), GREEN_STROKE=Color3.fromRGB(74,222,128),
+    OFF_TEXT=Color3.fromRGB(148,163,184), DANGER=Color3.fromRGB(239,68,68),
     FRIEND=Color3.fromRGB(70,170,62), FRIEND2=Color3.fromRGB(52,130,68),
     BASEBTN=Color3.fromRGB(64,120,196), BASEBTN2=Color3.fromRGB(46,92,158),
     SUCCESS=Color3.fromRGB(34,197,94), FAIL=Color3.fromRGB(120,40,40), RETRY=Color3.fromRGB(120,80,30),
@@ -56,7 +54,7 @@ local Hops={ hoppedServers={} }
 pcall(function() if type(isfile)=="function" and isfile(C.HOPS) then local ok,res=pcall(function() return HS:JSONDecode(readfile(C.HOPS)) end); if ok and type(res)=="table" and type(res.hoppedServers)=="table" then Hops.hoppedServers=res.hoppedServers end end end)
 local function saveHops() if type(writefile)~="function" then return end pcall(function() writefile(C.HOPS, HS:JSONEncode(Hops)) end) end
 
--- ========== DATA ==========
+-- ===== DATA =====
 local function tryReq(path,fb) local ok,res=pcall(require,path); return ok and res or fb end
 local function findChild(p,n) return p and p:FindFirstChild(n) or nil end
 local Animals=tryReq(findChild(findChild(RS,"Datas"),"Animals"),{})
@@ -65,11 +63,8 @@ local Traits=tryReq(findChild(findChild(RS,"Datas"),"Traits"),{})
 local Rarities=tryReq(findChild(findChild(RS,"Datas"),"Rarities"),{})
 local ServerData=tryReq(findChild(findChild(RS,"Datas"),"ServerData"),nil)
 local SharedAnimals=tryReq(findChild(findChild(RS,"Shared"),"Animals"),nil)
-local OverheadController=tryReq(findChild(findChild(RS,"Controllers"),"AnimalOverheadController"),nil)
-local OverheadTemplate=(function() local o=findChild(RS,"Overheads"); return o and o:FindFirstChild("AnimalOverhead") end)()
 local AssetCache=(function() local c=findChild(RS,"Controllers"); c=c and c:FindFirstChild("AssetStreamController"); return c and c:FindFirstChild("AssetCache") end)()
 local AnimalModels=(function() local m=findChild(RS,"Models"); return m and m:FindFirstChild("Animals") end)()
-local Trove=tryReq(findChild(findChild(RS,"Packages"),"Trove"),nil)
 local Sync=tryReq(findChild(findChild(RS,"Packages"),"Synchronizer"),nil)
 
 local function fmt(n)
@@ -80,14 +75,33 @@ local function fmt(n)
     if n>=1e3 then return string.format("%.1fK",n/1e3) end
     return tostring(math.floor(n))
 end
-local function genOf(item)
-    local def=Animals[item.Index]; if not def or not def.Generation then return 0 end
-    local mult=1
-    if item.Mutation and item.Mutation~="None" and item.Mutation~="" then
-        local m=Mutations[item.Mutation]; if m and m.Modifier then mult=1+m.Modifier end
+-- Slicedz v443_9 equivalent (mutation + traits)
+local function genFromParts(index, mutation, traits)
+    local def=Animals[index]; if not def then return 0 end
+    local gen=def.Generation
+    if not gen then return 0 end
+    local mult=1; local sleepy=false
+    if type(traits)=="table" then
+        for _,t in ipairs(traits) do
+            local td=Traits[t]
+            if td then
+                if t~="Sleepy" then mult=mult+(td.MultiplierModifier or 0) else sleepy=true end
+            end
+        end
     end
-    if type(item.Traits)=="table" then for _,t in ipairs(item.Traits) do local td=Traits[t]; if td and td.MultiplierModifier then mult=mult+td.MultiplierModifier end end end
-    return (tonumber(def.Generation) or 0)*mult
+    local mutMult=1
+    if mutation and mutation~="None" and mutation~="" then
+        local m=Mutations[mutation]
+        if m then mutMult=1+(m.Modifier or 0) end
+    end
+    local out=gen*mutMult*mult
+    if sleepy then out=out*0.5 end
+    return math.round(out)
+end
+-- Slicedz v444_1 equivalent (item table)
+local function genOf(item)
+    if not item or not item.Index then return 0 end
+    return genFromParts(item.Index, item.Mutation, item.Traits)
 end
 local function plotOf(ownerName)
     local plots=workspace:FindFirstChild("Plots"); if not plots or not Sync then return nil,nil end
@@ -101,8 +115,8 @@ local function plotOf(ownerName)
     return nil,nil
 end
 
--- ========== TRANSLATE (Google only) ==========
-local function decodeTranslationResponse(r)
+-- ===== TRANSLATE (Google) =====
+local function decodeTr(r)
     if type(r)~="table" then return nil end
     if r.Success==false or r.success==false then return nil end
     local st=r.StatusCode or r.status_code or r.Status or r.status
@@ -119,7 +133,7 @@ local function googleTranslate(text,tl,sl)
         return HTTP({Url=url,Method="GET",Headers={["User-Agent"]="Mozilla/5.0"}})
     end)
     if not ok then return text,sl end
-    local d=decodeTranslationResponse(res); local f=d and d[1]
+    local d=decodeTr(res); local f=d and d[1]
     if type(f)=="table" then if type(f[1])=="string" and f[1]~="" then local det=type(f[2])=="string" and f[2]~="" and f[2] or sl; return f[1],det end
     elseif type(f)=="string" and f~="" then return f,sl end
     return text,sl
@@ -150,7 +164,7 @@ local LANGS={
 local LBC={}; for _,l in ipairs(LANGS) do LBC[l.code]=l.name end
 local function langName(c) if not c or c=="" or c=="auto" then return "—" end return LBC[c] or c:upper() end
 
--- ========== TRADE SEND ==========
+-- ===== TRADE SEND =====
 local function findSendTradePrompt(ownerName)
     local plotName=plotOf(ownerName); if not plotName then return nil end
     local plot=workspace.Plots:FindFirstChild(plotName); if not plot then return nil end
@@ -159,8 +173,8 @@ local function findSendTradePrompt(ownerName)
 end
 local function stripRich(s) return (tostring(s):gsub("<[^>]+>","")) end
 local function watchNotification(timeout,cb)
-    local pg=LP:FindFirstChild("PlayerGui"); local notifGui=pg and pg:FindFirstChild("Notification")
-    local notif=notifGui and notifGui:FindFirstChild("Notification"); if not notif then cb(nil); return end
+    local pg=LP:FindFirstChild("PlayerGui"); local ng=pg and pg:FindFirstChild("Notification")
+    local notif=ng and ng:FindFirstChild("Notification"); if not notif then cb(nil); return end
     local fired=false; local conn
     local function handle(child)
         if fired then return end
@@ -189,7 +203,7 @@ local function sendTradeRequest(ownerName,cb)
     end)
 end
 
--- ========== HOP ==========
+-- ===== HOP =====
 local function resolvePlaceId(tier)
     if not ServerData then return game.PlaceId end
     if tier=="Pro" then return ServerData.TradePlazaProPlaceId end
@@ -236,7 +250,7 @@ local function hopServer(tier)
     return true
 end
 
--- ========== UI PRIMITIVES ==========
+-- ===== UI PRIMITIVES =====
 local function corner(p,r) local c=Instance.new("UICorner",p); c.CornerRadius=UDim.new(0,r or 8); return c end
 local function stroke(p,c,t,tr) local s=Instance.new("UIStroke",p); s.Color=c or THEME.STROKE; s.Thickness=t or 1; s.Transparency=tr or 0.4; return s end
 local function tween(o,d,pr) TS:Create(o,TweenInfo.new(d or 0.14,Enum.EasingStyle.Quint,Enum.EasingDirection.Out),pr):Play() end
@@ -297,7 +311,7 @@ local function alertSound()
     end)
 end
 
--- ========== MAIN WINDOW ==========
+-- ===== MAIN WINDOW =====
 local sg=Instance.new("ScreenGui"); sg.Name="GuestConvincer"; sg.ResetOnSpawn=false; sg.IgnoreGuiInset=true
 sg.DisplayOrder=999999; sg.ZIndexBehavior=Enum.ZIndexBehavior.Sibling; sg.Parent=GuiRoot
 local root=Instance.new("Frame",sg); root.Size=UDim2.fromOffset(370,510)
@@ -347,7 +361,7 @@ footer.AnchorPoint=Vector2.new(0.5,1); footer.Position=UDim2.new(0.5,0,1,-8); fo
 footer.BackgroundTransparency=1; footer.Font=Enum.Font.GothamBlack; footer.Text="GUEST · CONVINCER"
 footer.TextSize=11; footer.TextColor3=THEME.DIM; footer.ZIndex=3
 
--- ========== TRADE TAB ==========
+-- ===== TRADE TAB =====
 local listFrame=Instance.new("Frame",content); listFrame.Size=UDim2.fromScale(1,1); listFrame.BackgroundTransparency=1; pages.list=listFrame
 local searchBox=Instance.new("TextBox",listFrame); searchBox.Size=UDim2.new(1,0,0,30); searchBox.Position=UDim2.fromOffset(0,0)
 searchBox.BackgroundColor3=THEME.SURF; searchBox.Text=""; searchBox.PlaceholderText="search player, brainrot, mutation, rarity..."
@@ -434,7 +448,6 @@ local function renderTraders()
         local sub=Instance.new("TextLabel",inner); sub.Size=UDim2.new(1,-(offsetX+118),0,14); sub.Position=UDim2.fromOffset(offsetX,28)
         sub.BackgroundTransparency=1; sub.Font=Enum.Font.GothamBold; sub.Text=#p.items.." • total $"..fmt(p.totalGen).."/s"
         sub.TextSize=10; sub.TextColor3=THEME.GREEN_STROKE; sub.TextXAlignment=Enum.TextXAlignment.Left
-
         local tradeBtn=button(inner,"TRADE",{textSize=10})
         tradeBtn.Size=UDim2.fromOffset(90,34); tradeBtn.Position=UDim2.new(1,-96,0.5,-17)
         local armed=false; local armTime=0; local busy=false
@@ -492,7 +505,7 @@ end
 searchBox:GetPropertyChangedSignal("Text"):Connect(function() searchQuery=searchBox.Text; LIST_LAST=""; pcall(renderTraders) end)
 task.spawn(function() while sg.Parent and alive() do pcall(renderTraders); task.wait(1.5) end end)
 
--- ========== TRANSLATE TAB ==========
+-- ===== TRANSLATE TAB =====
 local chatPage=Instance.new("Frame",content); chatPage.Size=UDim2.fromScale(1,1); chatPage.BackgroundTransparency=1; chatPage.Visible=false; pages.chat=chatPage
 local myCard=Instance.new("Frame",chatPage); myCard.Size=UDim2.new(0.5,-5,0,44); myCard.Position=UDim2.fromOffset(0,0)
 myCard.BackgroundColor3=THEME.SURF2; myCard.BorderSizePixel=0; myCard.ZIndex=5; corner(myCard,10); stroke(myCard,THEME.STROKE,1,0.5)
@@ -647,7 +660,7 @@ sendBtn.MouseButton1Click:Connect(function()
     end)
 end)
 
--- ========== AUTO-TRANSLATE ==========
+-- ===== AUTO-TRANSLATE =====
 local transState={}
 local function getState(sf) local s=transState[sf]; if not s then s={n=0,votes={}}; transState[sf]=s end return s end
 local function isMsgF(o) return o:IsA("Frame") and o.Name:find("^Message")~=nil end
@@ -721,7 +734,7 @@ task.spawn(function()
     pg.ChildAdded:Connect(function(c) if c.Name=="TradeLiveTrade" then task.defer(function() attachTradeUI(c) end) end end)
 end)
 
--- ========== PRESETS ==========
+-- ===== PRESETS =====
 local presetsPage=Instance.new("Frame",content); presetsPage.Size=UDim2.fromScale(1,1); presetsPage.BackgroundTransparency=1
 presetsPage.Visible=false; pages.presets=presetsPage
 local presetBox=Instance.new("TextBox",presetsPage); presetBox.Size=UDim2.new(1,0,0,42); presetBox.Position=UDim2.fromOffset(0,0)
@@ -776,7 +789,7 @@ addPreset.MouseButton1Click:Connect(function()
 end)
 renderPresets()
 
--- ========== SETTINGS ==========
+-- ===== SETTINGS =====
 local settingsPage=Instance.new("Frame",content); settingsPage.Size=UDim2.fromScale(1,1); settingsPage.BackgroundTransparency=1
 settingsPage.Visible=false; pages.settings=settingsPage
 local setScroll=Instance.new("ScrollingFrame",settingsPage); setScroll.Size=UDim2.fromScale(1,1); setScroll.BackgroundTransparency=1
@@ -922,7 +935,7 @@ task.spawn(function()
     end
 end)
 
--- ========== BEAM ==========
+-- ===== BEAM =====
 local Beam={owner=nil,hl=nil,beam=nil,att0=nil,att1=nil,conn=nil}
 local function clearBeam()
     if Beam.conn then Beam.conn:Disconnect(); Beam.conn=nil end
@@ -955,7 +968,7 @@ local function beamTo(owner)
     Toast("BEAM","tracking "..owner.."'s base",2); return true
 end
 
--- ========== BASE VIEWER (3D, Slicedz) ==========
+-- ===== BASE VIEWER (3D) =====
 local BasePanel, BaseMeta
 do
     local pg=LP:FindFirstChildOfClass("PlayerGui") or GuiRoot
@@ -1349,7 +1362,7 @@ do
     end
 end
 
--- ========== HEADER INJECTION ==========
+-- ===== HEADER INJECTION =====
 local HeaderBtn={showBase=nil,friend=nil,friendConn=nil,current=nil}
 local function clearHeaderButtons()
     pcall(function() if HeaderBtn.friendConn then HeaderBtn.friendConn:Disconnect() end end)
